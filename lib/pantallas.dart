@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'camara_manos.dart';
 import 'controlador.dart';
 import 'db.dart';
 import 'nui.dart';
@@ -707,11 +708,27 @@ class PantallaValoracion extends StatefulWidget {
 class _PantallaValoracionState extends State<PantallaValoracion> {
   int? _libroId;
   String _feedback = '';
+  int _valor = 0;
+  int _version = 0; // fuerza a ThumbRating a reflejar el gesto de la cámara
 
   @override
   void initState() {
     super.initState();
     _libroId = widget.libroId;
+  }
+
+  String _textoValor(int v) =>
+      v == 1 ? 'Pulgar arriba' : (v == -1 ? 'Pulgar abajo' : 'Sin valorar');
+
+  /// Valoración recibida de los botones (táctil) o de la cámara (gesto).
+  void _valorar(int v, String origen) {
+    final libro = ctrl.todos.firstWhere((l) => l.id == _libroId);
+    setState(() {
+      _valor = v;
+      _feedback = _textoValor(v);
+      if (origen == 'cámara') _version++;
+    });
+    ctrl.valorar(libro, v, origen: origen);
   }
 
   @override
@@ -740,24 +757,22 @@ class _PantallaValoracionState extends State<PantallaValoracion> {
                 onChanged: (v) => setState(() {
                   _libroId = v;
                   _feedback = '';
+                  _valor = 0;
                 }),
               ),
               const SizedBox(height: 24),
               if (existe)
                 Center(
                   child: ThumbRating(
-                    key: ValueKey(_libroId),
-                    onChanged: (v) {
-                      final libro = ctrl.todos.firstWhere((l) => l.id == _libroId);
-                      setState(() => _feedback = v == 1
-                          ? 'Pulgar arriba'
-                          : v == -1
-                              ? 'Pulgar abajo'
-                              : 'Sin valorar');
-                      ctrl.valorar(libro, v);
-                    },
+                    key: ValueKey('$_libroId-$_version'),
+                    initialValue: _valor,
+                    onChanged: (v) => _valorar(v, 'táctil'),
                   ),
                 ),
+              if (existe) ...[
+                const SizedBox(height: 16),
+                VistaManos(onGesto: (v) => _valorar(v, 'cámara')),
+              ],
               if (_feedback.isNotEmpty)
                 Center(
                   child: Padding(
@@ -818,13 +833,24 @@ class PantallaAjustes extends StatelessWidget {
                 child: const Text('Comprobar'),
               ),
             ),
+            ValueListenableBuilder<String>(
+              valueListenable: estadoCamara,
+              builder: (context, estado, _) => ListTile(
+                leading: const Icon(Icons.videocam),
+                title: const Text('Permiso de cámara'),
+                subtitle: Text(estado),
+                trailing: const Text('Se pide al valorar'),
+              ),
+            ),
             const Divider(height: 32),
             Text('Aviso de privacidad',
                 style: Theme.of(context).textTheme.titleMedium),
             const Text(
-              'BiblioVoz usa el micrófono solo cuando pulsas «Hablar». El audio lo '
-              'procesa el navegador y no se almacena. En la base de datos solo se '
-              'guarda el texto de las órdenes, las sacudidas y las valoraciones.',
+              'BiblioVoz usa el micrófono solo cuando pulsas «Hablar» y la cámara '
+              'solo cuando pulsas «Valorar con la cámara». El audio y la imagen los '
+              'procesa el navegador: no se envían ni se almacenan. En la base de '
+              'datos solo se guarda el texto de las órdenes, las sacudidas y las '
+              'valoraciones.',
             ),
             const Divider(height: 32),
             Text('Registro de la interfaz natural (SQLite)',

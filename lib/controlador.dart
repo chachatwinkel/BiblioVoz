@@ -123,8 +123,11 @@ class BibliotecaController extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> valorar(Libro libro, int valor) =>
-      registrarNui('gesto', 'Valoración de "${libro.titulo}": $valor');
+  /// Guarda una valoración (-1, 0 o 1). [origen] indica cómo se hizo:
+  /// 'táctil' (botones) o 'cámara' (pulgar detectado con MediaPipe).
+  Future<void> valorar(Libro libro, int valor, {String origen = 'táctil'}) =>
+      registrarNui(
+          'gesto', 'Valoración de "${libro.titulo}": $valor ($origen)');
 
   /// Libro al azar que no esté prestado.
   Libro? libroAlAzar() {
