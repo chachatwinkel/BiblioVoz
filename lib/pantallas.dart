@@ -63,19 +63,7 @@ class _PantallaInicioState extends State<PantallaInicio> {
             builder: (context, _) => ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                const Card(
-                  child: Padding(
-                    padding: EdgeInsets.all(12),
-                    child: Padding(
-                      padding: EdgeInsets.all(8.0),
-                      child: Text(
-                        'Privacidad: el micrófono solo se usa para tus órdenes de voz. '
-                        'El navegador procesa el audio y no se guarda; en la base de '
-                        'datos solo se guarda el texto de la orden.',
-                      ),
-                    ),
-                  ),
-                ),
+                AvisoPrivacidad(),
                 const SizedBox(height: 16),
                 Text('Órdenes de voz',
                     style: Theme.of(context).textTheme.titleMedium),
@@ -177,6 +165,27 @@ class _PantallaInicioState extends State<PantallaInicio> {
                     )),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class AvisoPrivacidad extends StatelessWidget {
+  const AvisoPrivacidad({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const Card(
+      child: Padding(
+        padding: EdgeInsets.all(12),
+        child: Padding(
+          padding: EdgeInsets.all(8.0),
+          child: Text(
+            'Privacidad: el micrófono solo se usa para tus órdenes de voz. '
+            'El navegador procesa el audio y no se guarda; en la base de '
+            'datos solo se guarda el texto de la orden.',
           ),
         ),
       ),
@@ -981,3 +990,4 @@ class _FichaFlotanteState extends State<FichaFlotante> {
     );
   }
 }
+
