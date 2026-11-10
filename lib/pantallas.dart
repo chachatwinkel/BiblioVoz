@@ -66,10 +66,13 @@ class _PantallaInicioState extends State<PantallaInicio> {
                 const Card(
                   child: Padding(
                     padding: EdgeInsets.all(12),
-                    child: Text(
-                      'Privacidad: el micrófono solo se usa para tus órdenes de voz. '
-                      'El navegador procesa el audio y no se guarda; en la base de '
-                      'datos solo se guarda el texto de la orden.',
+                    child: Padding(
+                      padding: EdgeInsets.all(8.0),
+                      child: Text(
+                        'Privacidad: el micrófono solo se usa para tus órdenes de voz. '
+                        'El navegador procesa el audio y no se guarda; en la base de '
+                        'datos solo se guarda el texto de la orden.',
+                      ),
                     ),
                   ),
                 ),
