@@ -4,6 +4,7 @@
 erDiagram
     LIBRO ||--o{ PRESTAMO : "se presta en"
     SOCIO ||--o{ PRESTAMO : "realiza"
+    LIBRO ||--o{ VALORACION
 
     LIBRO {
         INTEGER id PK
@@ -70,4 +71,12 @@ CREATE TABLE registro_nui(
   detalle TEXT NOT NULL,
   fecha TEXT NOT NULL
 );
-```
+
+CREATE TABLE valoracion(
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  libro_id INTEGER NOT NULL,
+  valor INTEGER NOT NULL,
+  origen TEXT NOT NULL,
+  fecha TEXT NOT NULL,
+  FOREIGN KEY(libro_id) REFERENCES libro(id)
+);

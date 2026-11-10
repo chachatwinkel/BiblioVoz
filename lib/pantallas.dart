@@ -771,7 +771,15 @@ class _PantallaValoracionState extends State<PantallaValoracion> {
                 ),
               if (existe) ...[
                 const SizedBox(height: 16),
-                VistaManos(onGesto: (v) => _valorar(v, 'cámara')),
+                const Text(
+                    'Realidad aumentada (maqueta): activa la cámara y arrastra '
+                    'la ficha sobre tu libro físico.'),
+                VistaManos(
+                  onGesto: (v) => _valorar(v, 'cámara'),
+                  superposicion: FichaFlotante(
+                    libro: ctrl.todos.firstWhere((l) => l.id == _libroId),
+                  ),
+                ),
               ],
               if (_feedback.isNotEmpty)
                 Center(
@@ -865,6 +873,107 @@ class PantallaAjustes extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Ficha flotante de realidad aumentada (maqueta 2D): se dibuja sobre la imagen
+/// de la cámara y se arrastra hasta colocarla sobre el libro físico.
+class FichaFlotante extends StatefulWidget {
+  final Libro libro;
+  const FichaFlotante({super.key, required this.libro});
+
+  @override
+  State<FichaFlotante> createState() => _FichaFlotanteState();
+}
+
+class _FichaFlotanteState extends State<FichaFlotante> {
+  Offset _pos = const Offset(16, 16);
+  double? _nota;
+  int _votos = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    ctrl.addListener(_cargar); // se actualiza al cambiar las valoraciones
+    _cargar();
+  }
+
+  @override
+  void didUpdateWidget(FichaFlotante old) {
+    super.didUpdateWidget(old);
+    if (old.libro.id != widget.libro.id) _cargar();
+  }
+
+  @override
+  void dispose() {
+    ctrl.removeListener(_cargar);
+    super.dispose();
+  }
+
+  Future<void> _cargar() async {
+    final m = await ctrl.mediaValoracion(widget.libro.id!);
+    if (!mounted) return;
+    setState(() {
+      _nota = m.nota;
+      _votos = m.votos;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        Positioned(
+          left: _pos.dx,
+          top: _pos.dy,
+          child: GestureDetector(
+            onPanUpdate: (d) => setState(() => _pos += d.delta),
+            onPanEnd: (_) => ctrl.registrarNui(
+                'ar', 'Ficha de "${widget.libro.titulo}" colocada sobre el libro'),
+            child: Card(
+              color: const Color(0xB3000000),
+              child: Padding(
+                padding: const EdgeInsets.all(10),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 180),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.libro.titulo,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                            color: Colors.white, fontWeight: FontWeight.bold),
+                      ),
+                      Text(
+                        widget.libro.autor,
+                        style: const TextStyle(color: Colors.white70, fontSize: 12),
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.star, color: Colors.amber, size: 18),
+                          const SizedBox(width: 4),
+                          Text(
+                            _nota == null
+                                ? 'Sin valoraciones'
+                                : '${_nota!.toStringAsFixed(1)} / 5 · $_votos',
+                            style: const TextStyle(color: Colors.white),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

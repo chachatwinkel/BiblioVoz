@@ -32,8 +32,10 @@ final ValueNotifier<String> estadoCamara = ValueNotifier('Sin comprobar');
 class VistaManos extends StatefulWidget {
   final ValueChanged<int> onGesto;
 
-  const VistaManos({super.key, required this.onGesto});
+  /// Widget que se dibuja encima del vídeo (la ficha flotante de AR).
+  final Widget? superposicion;
 
+  const VistaManos({super.key, required this.onGesto, this.superposicion});
   @override
   State<VistaManos> createState() => _VistaManosState();
 }
@@ -99,7 +101,13 @@ class _VistaManosState extends State<VistaManos> {
                 aspectRatio: 4 / 3,
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(12),
-                  child: const HtmlElementView(viewType: _tipoVista),
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      const HtmlElementView(viewType: _tipoVista),
+                      if (widget.superposicion != null) widget.superposicion!,
+                    ],
+                  ),
                 ),
               ),
             ),

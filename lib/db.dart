@@ -94,11 +94,13 @@ class DatabaseHelper {
   Future<Database> _abrir() {
     return openDatabase(
       'bibliovoz.db',
-      version: 1,
+      version: 2,
       // Las claves ajenas vienen desactivadas por defecto en SQLite.
       onConfigure: (db) => db.execute('PRAGMA foreign_keys = ON'),
       onCreate: _crear,
-      onUpgrade: (db, oldVersion, newVersion) async {},
+      onUpgrade: (db, oldVersion, newVersion) async {
+        if (oldVersion < 2) await _crearValoracion(db);
+      },
     );
   }
 
@@ -191,6 +193,30 @@ class DatabaseHelper {
     prestamo(6, 2, 45, 35); // devuelto
     prestamo(11, 3, 25, 18); // devuelto
     await batch.commit(noResult: true);
+        await _crearValoracion(db);
+  }
+
+    /// Valoraciones de libros (pulgar táctil o de cámara). Se crea en la versión 2.
+  Future<void> _crearValoracion(Database db) async {
+    await db.execute('''
+      CREATE TABLE valoracion(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        libro_id INTEGER NOT NULL,
+        valor INTEGER NOT NULL,
+        origen TEXT NOT NULL,
+        fecha TEXT NOT NULL,
+        FOREIGN KEY(libro_id) REFERENCES libro(id)
+      )''');
+    // Algunas valoraciones de ejemplo para que la ficha tenga datos.
+    final ahora = DateTime.now().toIso8601String();
+    for (final v in [[1, 1], [1, 1], [1, -1], [5, 1], [5, 1]]) {
+      await db.insert('valoracion', {
+        'libro_id': v[0],
+        'valor': v[1],
+        'origen': 'táctil',
+        'fecha': ahora,
+      });
+    }
   }
 }
 
@@ -292,6 +318,24 @@ class Repositorio {
     return {
       for (final f in filas) '${f['genero']}': f['total'] as int,
     };
+  }
+
+    Future<int> insertarValoracion(int libroId, int valor, String origen) async =>
+      (await _db).insert('valoracion', {
+        'libro_id': libroId,
+        'valor': valor,
+        'origen': origen,
+        'fecha': DateTime.now().toIso8601String(),
+      });
+
+  /// Agregado (AVG y COUNT): valoración media de un libro, de -1 a 1.
+  Future<Map<String, Object?>> mediaValoracion(int libroId) async {
+    final filas = await (await _db).rawQuery(
+      'SELECT AVG(valor) AS media, COUNT(*) AS total '
+      'FROM valoracion WHERE libro_id = ?',
+      [libroId],
+    );
+    return filas.first;
   }
 
   // ---- Interfaz natural ----

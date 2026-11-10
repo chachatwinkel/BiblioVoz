@@ -123,12 +123,23 @@ class BibliotecaController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Guarda una valoración (-1, 0 o 1). [origen] indica cómo se hizo:
-  /// 'táctil' (botones) o 'cámara' (pulgar detectado con MediaPipe).
-  Future<void> valorar(Libro libro, int valor, {String origen = 'táctil'}) =>
-      registrarNui(
-          'gesto', 'Valoración de "${libro.titulo}": $valor ($origen)');
+    /// Guarda una valoración (-1, 0 o 1). [origen]: 'táctil' o 'cámara'.
+  Future<void> valorar(Libro libro, int valor, {String origen = 'táctil'}) async {
+    if (valor != 0) await _repo.insertarValoracion(libro.id!, valor, origen);
+    await registrarNui(
+        'gesto', 'Valoración de "${libro.titulo}": $valor ($origen)');
+  }
 
+  /// Nota de 0 a 5 (null si no hay votos) y número de votos de un libro.
+  Future<({double? nota, int votos})> mediaValoracion(int libroId) async {
+    final f = await _repo.mediaValoracion(libroId);
+    final media = (f['media'] as num?)?.toDouble();
+    return (
+      nota: media == null ? null : (media + 1) * 2.5,
+      votos: (f['total'] as num).toInt(),
+    );
+  }
+  
   /// Libro al azar que no esté prestado.
   Libro? libroAlAzar() {
     final disponibles =
