@@ -5,7 +5,7 @@ import 'camara_manos.dart';
 import 'controlador.dart';
 import 'db.dart';
 import 'nui.dart';
-import 'widgets.dart';
+import 'package:ui_kit_biblio/ui_kit_biblio.dart';
 
 // ---------- Utilidades ----------
 
@@ -17,6 +17,31 @@ void aviso(BuildContext context, String mensaje) =>
         .showSnackBar(SnackBar(content: Text(mensaje)));
 
 String soloFecha(Object? iso) => (iso as String).substring(0, 10);
+/// BookCard alimentado con un libro de SQLite.
+BookCard tarjetaLibro(BuildContext context, Libro l) => BookCard(
+      title: l.titulo,
+      author: l.autor,
+      borrowed: ctrl.librosPrestados.contains(l.id),
+      borrowedLabel: 'Prestado',
+      availableLabel: 'Disponible',
+      loanTooltip: 'Prestar',
+      onTap: () => ir(context, PantallaFichaLibro(l)),
+      onLoan: () => ir(context, PantallaNuevoPrestamo(libro: l)),
+    );
+
+/// ThumbRating con los textos en español.
+ThumbRating pulgares({
+  Key? key,
+  int inicial = 0,
+  required ValueChanged<int> onChanged,
+}) =>
+    ThumbRating(
+      key: key,
+      initialValue: inicial,
+      onChanged: onChanged,
+      downTooltip: 'Pulgar abajo',
+      upTooltip: 'Pulgar arriba',
+    );
 
 // =====================================================================
 // 1. INICIO
@@ -85,6 +110,7 @@ class _PantallaInicioState extends State<PantallaInicio> {
                           ir(context, PantallaFichaLibro(nui.sugerencia!)),
                     ),
                   ),
+                if (nui.sugerencia != null) tarjetaLibro(context, nui.sugerencia!),
                 const Divider(height: 32),
                 ListTile(
                   leading: const Icon(Icons.menu_book),
@@ -344,13 +370,7 @@ class _PantallaCatalogoState extends State<PantallaCatalogo> {
                             }
                             return false; // la lista ya se recarga sola
                           },
-                          child: BookCard(
-                            libro: l,
-                            prestado: ctrl.librosPrestados.contains(l.id),
-                            onTap: () => ir(context, PantallaFichaLibro(l)),
-                            onLoan: () =>
-                                ir(context, PantallaNuevoPrestamo(libro: l)),
-                          ),
+                        child: tarjetaLibro(context, l),
                         );
                       },
                     );
@@ -406,6 +426,8 @@ class PantallaFichaLibro extends StatelessWidget {
                 subtitle: Text(prestado ? 'Prestado' : 'Disponible'),
               ),
               const SizedBox(height: 12),
+              const SizedBox(height: 12),
+              Center(child: pulgares(onChanged: (v) => ctrl.valorar(l, v))),
               FilledButton.icon(
                 icon: const Icon(Icons.outbox),
                 label: const Text('Prestar este libro'),
@@ -878,9 +900,9 @@ class _PantallaValoracionState extends State<PantallaValoracion> {
               const SizedBox(height: 24),
               if (existe)
                 Center(
-                  child: ThumbRating(
+                  child: pulgares(
                     key: ValueKey('$_libroId-$_version'),
-                    initialValue: _valor,
+                    inicial: _valor,
                     onChanged: (v) => _valorar(v, 'táctil'),
                   ),
                 ),

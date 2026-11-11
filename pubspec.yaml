@@ -40,6 +40,9 @@ dependencies:
   flutter_tts: ^4.2.5
   sensors_plus: ^7.1.1
 
+  ui_kit_biblio:
+    path: packages/ui_kit_biblio
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
