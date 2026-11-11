@@ -12,8 +12,9 @@ import 'widgets.dart';
 void ir(BuildContext context, Widget pantalla) =>
     Navigator.push(context, MaterialPageRoute(builder: (_) => pantalla));
 
-void aviso(BuildContext context, String mensaje) => ScaffoldMessenger.of(context)
-    .showSnackBar(SnackBar(content: Text(mensaje)));
+void aviso(BuildContext context, String mensaje) =>
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(mensaje)));
 
 String soloFecha(Object? iso) => (iso as String).substring(0, 10);
 
@@ -51,6 +52,8 @@ class _PantallaInicioState extends State<PantallaInicio> {
 
   @override
   Widget build(BuildContext context) {
+    final orden = _orden;
+    final enviar = _enviar;
     return CallbackShortcuts(
       // F2 simula la sacudida del móvil en el ordenador.
       bindings: {const SingleActivator(LogicalKeyboardKey.f2): nui.sacudir},
@@ -65,44 +68,7 @@ class _PantallaInicioState extends State<PantallaInicio> {
               children: [
                 AvisoPrivacidad(),
                 const SizedBox(height: 16),
-                Text('Órdenes de voz',
-                    style: Theme.of(context).textTheme.titleMedium),
-                const SizedBox(height: 8),
-                FilledButton.icon(
-                  onPressed: nui.escuchando ? nui.detener : nui.escuchar,
-                  icon: Icon(nui.escuchando ? Icons.mic : Icons.mic_none),
-                  label: Text(
-                      nui.escuchando ? 'Escuchando… (pulsa para parar)' : 'Hablar'),
-                ),
-                if (nui.escuchando) const LinearProgressIndicator(),
-                if (nui.ultimoTexto.isNotEmpty) Text('Has dicho: ${nui.ultimoTexto}'),
-                if (nui.respuesta.isNotEmpty)
-                  Text(nui.respuesta,
-                      style: const TextStyle(fontWeight: FontWeight.bold)),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _orden,
-                        decoration: const InputDecoration(
-                          labelText: 'O escribe una orden',
-                          hintText: 'Busca libros de ciencia ficción',
-                          border: OutlineInputBorder(),
-                        ),
-                        onSubmitted: _enviar,
-                      ),
-                    ),
-                    IconButton(
-                      tooltip: 'Enviar',
-                      icon: const Icon(Icons.send),
-                      onPressed: () => _enviar(_orden.text),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                const Text(
-                    'Órdenes: «Busca libros de ciencia ficción» · «Devuelve el préstamo del libro Dune»'),
+                PanelVoz(orden: orden, enviar: enviar),
                 const SizedBox(height: 16),
                 OutlinedButton.icon(
                   onPressed: nui.sacudir,
@@ -115,7 +81,8 @@ class _PantallaInicioState extends State<PantallaInicio> {
                       leading: const Icon(Icons.auto_awesome),
                       title: Text(nui.sugerencia!.titulo),
                       subtitle: Text(nui.sugerencia!.autor),
-                      onTap: () => ir(context, PantallaFichaLibro(nui.sugerencia!)),
+                      onTap: () =>
+                          ir(context, PantallaFichaLibro(nui.sugerencia!)),
                     ),
                   ),
                 const Divider(height: 32),
@@ -145,29 +112,108 @@ class _PantallaInicioState extends State<PantallaInicio> {
                   onTap: () => ir(context, const PantallaAjustes()),
                 ),
                 const Divider(height: 32),
-                Text('Préstamos vencidos (JOIN)',
-                    style: Theme.of(context).textTheme.titleMedium),
+                Text(
+                  'Préstamos vencidos (JOIN)',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
                 if (ctrl.vencidos.isEmpty) const Text('Ninguno'),
-                ...ctrl.vencidos.map((v) => ListTile(
-                      dense: true,
-                      leading: const Icon(Icons.warning_amber, color: Colors.orange),
-                      title: Text('${v['titulo']}'),
-                      subtitle: Text(
-                          'Socio: ${v['alias']} · salida ${soloFecha(v['fecha_salida'])}'),
-                    )),
+                ...ctrl.vencidos.map(
+                  (v) => ListTile(
+                    dense: true,
+                    leading: const Icon(
+                      Icons.warning_amber,
+                      color: Colors.orange,
+                    ),
+                    title: Text('${v['titulo']}'),
+                    subtitle: Text(
+                      'Socio: ${v['alias']} · salida ${soloFecha(v['fecha_salida'])}',
+                    ),
+                  ),
+                ),
                 const SizedBox(height: 16),
-                Text('Préstamos por género (COUNT)',
-                    style: Theme.of(context).textTheme.titleMedium),
-                ...ctrl.porGenero.entries.map((e) => ListTile(
-                      dense: true,
-                      title: Text(e.key),
-                      trailing: Text('${e.value}'),
-                    )),
+                Text(
+                  'Préstamos por género (COUNT)',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                ...ctrl.porGenero.entries.map(
+                  (e) => ListTile(
+                    dense: true,
+                    title: Text(e.key),
+                    trailing: Text('${e.value}'),
+                  ),
+                ),
               ],
             ),
           ),
         ),
       ),
+    );
+  }
+}
+
+class PanelVoz extends StatelessWidget {
+  const PanelVoz({
+    super.key,
+    required this.orden,
+    required this.enviar,
+  });
+
+  final TextEditingController orden;
+  final void Function(String texto) enviar;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          'Órdenes de voz',
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        const SizedBox(height: 8),
+        FilledButton.icon(
+          onPressed: nui.escuchando ? nui.detener : nui.escuchar,
+          icon: Icon(nui.escuchando ? Icons.mic : Icons.mic_none),
+          label: Text(
+            nui.escuchando
+                ? 'Escuchando… (pulsa para parar)'
+                : 'Hablar',
+          ),
+        ),
+        if (nui.escuchando) const LinearProgressIndicator(),
+        if (nui.ultimoTexto.isNotEmpty)
+          Text('Has dicho: ${nui.ultimoTexto}'),
+        if (nui.respuesta.isNotEmpty)
+          Text(
+            nui.respuesta,
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: orden,
+                decoration: const InputDecoration(
+                  labelText: 'O escribe una orden',
+                  hintText: 'Busca libros de ciencia ficción',
+                  border: OutlineInputBorder(),
+                ),
+                onSubmitted: enviar,
+              ),
+            ),
+            IconButton(
+              tooltip: 'Enviar',
+              icon: const Icon(Icons.send),
+              onPressed: () => enviar(orden.text),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        const Text(
+          'Órdenes: «Busca libros de ciencia ficción» · «Devuelve el préstamo del libro Dune»',
+        ),
+      ],
     );
   }
 }
@@ -264,13 +310,20 @@ class _PantallaCatalogoState extends State<PantallaCatalogo> {
                             color: Colors.red,
                             alignment: Alignment.centerRight,
                             padding: const EdgeInsets.only(right: 20),
-                            child: const Icon(Icons.delete, color: Colors.white),
+                            child: const Icon(
+                              Icons.delete,
+                              color: Colors.white,
+                            ),
                           ),
                           confirmDismiss: (_) async {
                             final ok = await ctrl.borrarLibro(l.id!);
                             if (context.mounted) {
-                              aviso(context,
-                                  ok ? 'Libro borrado' : 'No se puede borrar: tiene préstamos');
+                              aviso(
+                                context,
+                                ok
+                                    ? 'Libro borrado'
+                                    : 'No se puede borrar: tiene préstamos',
+                              );
                             }
                             return false; // la lista ya se recarga sola
                           },
@@ -307,7 +360,10 @@ class PantallaFichaLibro extends StatelessWidget {
     return ListenableBuilder(
       listenable: ctrl,
       builder: (context, _) {
-        final l = ctrl.todos.firstWhere((x) => x.id == libro.id, orElse: () => libro);
+        final l = ctrl.todos.firstWhere(
+          (x) => x.id == libro.id,
+          orElse: () => libro,
+        );
         final prestado = ctrl.librosPrestados.contains(l.id);
         return Scaffold(
           appBar: AppBar(
@@ -336,8 +392,9 @@ class PantallaFichaLibro extends StatelessWidget {
               FilledButton.icon(
                 icon: const Icon(Icons.outbox),
                 label: const Text('Prestar este libro'),
-                onPressed:
-                    prestado ? null : () => ir(context, PantallaNuevoPrestamo(libro: l)),
+                onPressed: prestado
+                    ? null
+                    : () => ir(context, PantallaNuevoPrestamo(libro: l)),
               ),
             ],
           ),
@@ -386,13 +443,15 @@ class _PantallaAltaLibroState extends State<PantallaAltaLibro> {
 
   Future<void> _guardar() async {
     if (!_clave.currentState!.validate()) return;
-    await ctrl.guardarLibro(Libro(
-      id: widget.libro?.id,
-      titulo: _titulo.text.trim(),
-      autor: _autor.text.trim(),
-      isbn: _isbn.text.trim(),
-      genero: _genero.text.trim(),
-    ));
+    await ctrl.guardarLibro(
+      Libro(
+        id: widget.libro?.id,
+        titulo: _titulo.text.trim(),
+        autor: _autor.text.trim(),
+        isbn: _isbn.text.trim(),
+        genero: _genero.text.trim(),
+      ),
+    );
     if (mounted) Navigator.pop(context);
   }
 
@@ -400,7 +459,8 @@ class _PantallaAltaLibroState extends State<PantallaAltaLibro> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-          title: Text(widget.libro == null ? 'Nuevo libro' : 'Editar libro')),
+        title: Text(widget.libro == null ? 'Nuevo libro' : 'Editar libro'),
+      ),
       body: Form(
         key: _clave,
         child: ListView(
@@ -449,26 +509,31 @@ Future<void> dialogoSocio(BuildContext context, [Socio? s]) async {
         mainAxisSize: MainAxisSize.min,
         children: [
           TextField(
-              controller: alias,
-              decoration: const InputDecoration(labelText: 'Alias')),
+            controller: alias,
+            decoration: const InputDecoration(labelText: 'Alias'),
+          ),
           TextField(
-              controller: curso,
-              decoration: const InputDecoration(labelText: 'Curso')),
+            controller: curso,
+            decoration: const InputDecoration(labelText: 'Curso'),
+          ),
         ],
       ),
       actions: [
         TextButton(
-            onPressed: () => Navigator.pop(c, false),
-            child: const Text('Cancelar')),
+          onPressed: () => Navigator.pop(c, false),
+          child: const Text('Cancelar'),
+        ),
         FilledButton(
-            onPressed: () => Navigator.pop(c, true),
-            child: const Text('Guardar')),
+          onPressed: () => Navigator.pop(c, true),
+          child: const Text('Guardar'),
+        ),
       ],
     ),
   );
   if (ok == true && alias.text.trim().isNotEmpty) {
     await ctrl.guardarSocio(
-        Socio(id: s?.id, alias: alias.text.trim(), curso: curso.text.trim()));
+      Socio(id: s?.id, alias: alias.text.trim(), curso: curso.text.trim()),
+    );
   }
 }
 
@@ -500,8 +565,12 @@ class PantallaSocios extends StatelessWidget {
                   onPressed: () async {
                     final ok = await ctrl.borrarSocio(s.id!);
                     if (context.mounted) {
-                      aviso(context,
-                          ok ? 'Socio borrado' : 'No se puede borrar: tiene préstamos');
+                      aviso(
+                        context,
+                        ok
+                            ? 'Socio borrado'
+                            : 'No se puede borrar: tiene préstamos',
+                      );
                     }
                   },
                 ),
@@ -525,7 +594,10 @@ class PantallaFichaSocio extends StatelessWidget {
     return ListenableBuilder(
       listenable: ctrl,
       builder: (context, _) {
-        final s = ctrl.socios.firstWhere((x) => x.id == socio.id, orElse: () => socio);
+        final s = ctrl.socios.firstWhere(
+          (x) => x.id == socio.id,
+          orElse: () => socio,
+        );
         return Scaffold(
           appBar: AppBar(
             title: Text(s.alias),
@@ -548,8 +620,10 @@ class PantallaFichaSocio extends StatelessWidget {
                 onPressed: () => ir(context, PantallaNuevoPrestamo(socio: s)),
               ),
               const Divider(height: 32),
-              Text('Historial de préstamos (JOIN)',
-                  style: Theme.of(context).textTheme.titleMedium),
+              Text(
+                'Historial de préstamos (JOIN)',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
               FutureBuilder<List<Map<String, Object?>>>(
                 future: ctrl.prestamosDeSocio(s.id!),
                 builder: (context, snap) {
@@ -562,7 +636,8 @@ class PantallaFichaSocio extends StatelessWidget {
                           dense: true,
                           title: Text('${p['titulo']}'),
                           subtitle: Text(
-                              'Salida ${soloFecha(p['fecha_salida'])} · ${p['fecha_devolucion'] == null ? 'sin devolver' : 'devuelto ${soloFecha(p['fecha_devolucion'])}'}'),
+                            'Salida ${soloFecha(p['fecha_salida'])} · ${p['fecha_devolucion'] == null ? 'sin devolver' : 'devuelto ${soloFecha(p['fecha_devolucion'])}'}',
+                          ),
                         ),
                     ],
                   );
@@ -606,11 +681,14 @@ class PantallaPrestamos extends StatelessWidget {
                     vencidos.contains(p['prestamo_id'])
                         ? Icons.warning_amber
                         : Icons.book,
-                    color: vencidos.contains(p['prestamo_id']) ? Colors.orange : null,
+                    color: vencidos.contains(p['prestamo_id'])
+                        ? Colors.orange
+                        : null,
                   ),
                   title: Text('${p['titulo']}'),
                   subtitle: Text(
-                      'Socio: ${p['alias']} · salida ${soloFecha(p['fecha_salida'])}'),
+                    'Socio: ${p['alias']} · salida ${soloFecha(p['fecha_salida'])}',
+                  ),
                   trailing: TextButton(
                     child: const Text('Devolver'),
                     onPressed: () async {
@@ -665,8 +743,9 @@ class _PantallaNuevoPrestamoState extends State<PantallaNuevoPrestamo> {
 
   @override
   Widget build(BuildContext context) {
-    final disponibles =
-        ctrl.todos.where((l) => !ctrl.librosPrestados.contains(l.id)).toList();
+    final disponibles = ctrl.todos
+        .where((l) => !ctrl.librosPrestados.contains(l.id))
+        .toList();
     return Scaffold(
       appBar: AppBar(title: const Text('Nuevo préstamo')),
       body: ListView(
@@ -691,7 +770,10 @@ class _PantallaNuevoPrestamoState extends State<PantallaNuevoPrestamo> {
             value: ctrl.socios.any((s) => s.id == _socioId) ? _socioId : null,
             items: [
               for (final s in ctrl.socios)
-                DropdownMenuItem(value: s.id!, child: Text('${s.alias} (${s.curso})')),
+                DropdownMenuItem(
+                  value: s.id!,
+                  child: Text('${s.alias} (${s.curso})'),
+                ),
             ],
             onChanged: (v) => setState(() => _socioId = v),
           ),
@@ -751,8 +833,9 @@ class _PantallaValoracionState extends State<PantallaValoracion> {
         listenable: ctrl,
         builder: (context, _) {
           final existe = ctrl.todos.any((l) => l.id == _libroId);
-          final historial =
-              ctrl.registrosNui.where((r) => r['tipo'] == 'gesto').take(5);
+          final historial = ctrl.registrosNui
+              .where((r) => r['tipo'] == 'gesto')
+              .take(5);
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
@@ -784,8 +867,9 @@ class _PantallaValoracionState extends State<PantallaValoracion> {
               if (existe) ...[
                 const SizedBox(height: 16),
                 const Text(
-                    'Realidad aumentada (maqueta): activa la cámara y arrastra '
-                    'la ficha sobre tu libro físico.'),
+                  'Realidad aumentada (maqueta): activa la cámara y arrastra '
+                  'la ficha sobre tu libro físico.',
+                ),
                 VistaManos(
                   onGesto: (v) => _valorar(v, 'cámara'),
                   superposicion: FichaFlotante(
@@ -797,13 +881,17 @@ class _PantallaValoracionState extends State<PantallaValoracion> {
                 Center(
                   child: Padding(
                     padding: const EdgeInsets.all(12),
-                    child: Text(_feedback,
-                        style: Theme.of(context).textTheme.titleLarge),
+                    child: Text(
+                      _feedback,
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
                   ),
                 ),
               const Divider(height: 32),
-              Text('Últimas valoraciones (SQLite)',
-                  style: Theme.of(context).textTheme.titleMedium),
+              Text(
+                'Últimas valoraciones (SQLite)',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
               if (historial.isEmpty) const Text('Todavía no hay valoraciones'),
               for (final r in historial)
                 ListTile(dense: true, title: Text('${r['detalle']}')),
@@ -863,8 +951,10 @@ class PantallaAjustes extends StatelessWidget {
               ),
             ),
             const Divider(height: 32),
-            Text('Aviso de privacidad',
-                style: Theme.of(context).textTheme.titleMedium),
+            Text(
+              'Aviso de privacidad',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
             const Text(
               'BiblioVoz usa el micrófono solo cuando pulsas «Hablar» y la cámara '
               'solo cuando pulsas «Valorar con la cámara». El audio y la imagen los '
@@ -873,8 +963,10 @@ class PantallaAjustes extends StatelessWidget {
               'valoraciones.',
             ),
             const Divider(height: 32),
-            Text('Registro de la interfaz natural (SQLite)',
-                style: Theme.of(context).textTheme.titleMedium),
+            Text(
+              'Registro de la interfaz natural (SQLite)',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
             if (ctrl.registrosNui.isEmpty) const Text('Sin registros'),
             for (final r in ctrl.registrosNui.take(10))
               ListTile(
@@ -942,7 +1034,9 @@ class _FichaFlotanteState extends State<FichaFlotante> {
           child: GestureDetector(
             onPanUpdate: (d) => setState(() => _pos += d.delta),
             onPanEnd: (_) => ctrl.registrarNui(
-                'ar', 'Ficha de "${widget.libro.titulo}" colocada sobre el libro'),
+              'ar',
+              'Ficha de "${widget.libro.titulo}" colocada sobre el libro',
+            ),
             child: Card(
               color: const Color(0xB3000000),
               child: Padding(
@@ -958,11 +1052,16 @@ class _FichaFlotanteState extends State<FichaFlotante> {
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
-                            color: Colors.white, fontWeight: FontWeight.bold),
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       Text(
                         widget.libro.autor,
-                        style: const TextStyle(color: Colors.white70, fontSize: 12),
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 12,
+                        ),
                       ),
                       const SizedBox(height: 4),
                       Row(
@@ -990,4 +1089,3 @@ class _FichaFlotanteState extends State<FichaFlotante> {
     );
   }
 }
-
