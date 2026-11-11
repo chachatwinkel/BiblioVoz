@@ -114,17 +114,7 @@ class _PantallaInicioState extends State<PantallaInicio> {
                 const Divider(height: 32),
                 ListaVencidos(),
                 const SizedBox(height: 16),
-                Text(
-                  'Préstamos por género (COUNT)',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                ...ctrl.porGenero.entries.map(
-                  (e) => ListTile(
-                    dense: true,
-                    title: Text(e.key),
-                    trailing: Text('${e.value}'),
-                  ),
-                ),
+                ResumenGenero(),
               ],
             ),
           ),
@@ -134,10 +124,34 @@ class _PantallaInicioState extends State<PantallaInicio> {
   }
 }
 
-class ListaVencidos extends StatelessWidget {
-  const ListaVencidos({
+class ResumenGenero extends StatelessWidget {
+  const ResumenGenero({
     super.key,
   });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          'Préstamos por género (COUNT)',
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        ...ctrl.porGenero.entries.map(
+          (e) => ListTile(
+            dense: true,
+            title: Text(e.key),
+            trailing: Text('${e.value}'),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class ListaVencidos extends StatelessWidget {
+  const ListaVencidos({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -152,10 +166,7 @@ class ListaVencidos extends StatelessWidget {
         ...ctrl.vencidos.map(
           (v) => ListTile(
             dense: true,
-            leading: const Icon(
-              Icons.warning_amber,
-              color: Colors.orange,
-            ),
+            leading: const Icon(Icons.warning_amber, color: Colors.orange),
             title: Text('${v['titulo']}'),
             subtitle: Text(
               'Socio: ${v['alias']} · salida ${soloFecha(v['fecha_salida'])}',
