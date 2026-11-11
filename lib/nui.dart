@@ -64,8 +64,10 @@ class Nui extends ChangeNotifier {
     escuchando = true;
     notifyListeners();
     await _voz.listen(
-      localeId: 'es_ES',
-      pauseFor: const Duration(seconds: 3),
+      listenOptions: SpeechListenOptions(
+        localeId: 'es_ES',
+        pauseFor: const Duration(seconds: 3),
+      ),
       onResult: (r) {
         ultimoTexto = r.recognizedWords;
         notifyListeners();
