@@ -864,7 +864,10 @@ class _PantallaValoracionState extends State<PantallaValoracion> {
                 value: existe ? _libroId : null,
                 items: [
                   for (final l in ctrl.todos)
-                    DropdownMenuItem(value: l.id!, child: Text(l.titulo)),
+                DropdownMenuItem(
+                  value: l.id!,
+                  child: Text(l.titulo, maxLines: 1, overflow: TextOverflow.ellipsis),
+                ),
                 ],
                 onChanged: (v) => setState(() {
                   _libroId = v;
