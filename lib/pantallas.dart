@@ -968,6 +968,7 @@ class _FichaFlotanteState extends State<FichaFlotante> {
                       const SizedBox(height: 4),
                       Row(
                         mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           const Icon(Icons.star, color: Colors.amber, size: 18),
                           const SizedBox(width: 4),
