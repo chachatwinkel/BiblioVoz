@@ -112,24 +112,7 @@ class _PantallaInicioState extends State<PantallaInicio> {
                   onTap: () => ir(context, const PantallaAjustes()),
                 ),
                 const Divider(height: 32),
-                Text(
-                  'Préstamos vencidos (JOIN)',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                if (ctrl.vencidos.isEmpty) const Text('Ninguno'),
-                ...ctrl.vencidos.map(
-                  (v) => ListTile(
-                    dense: true,
-                    leading: const Icon(
-                      Icons.warning_amber,
-                      color: Colors.orange,
-                    ),
-                    title: Text('${v['titulo']}'),
-                    subtitle: Text(
-                      'Socio: ${v['alias']} · salida ${soloFecha(v['fecha_salida'])}',
-                    ),
-                  ),
-                ),
+                ListaVencidos(),
                 const SizedBox(height: 16),
                 Text(
                   'Préstamos por género (COUNT)',
@@ -151,12 +134,41 @@ class _PantallaInicioState extends State<PantallaInicio> {
   }
 }
 
-class PanelVoz extends StatelessWidget {
-  const PanelVoz({
+class ListaVencidos extends StatelessWidget {
+  const ListaVencidos({
     super.key,
-    required this.orden,
-    required this.enviar,
   });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          'Préstamos vencidos (JOIN)',
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        if (ctrl.vencidos.isEmpty) const Text('Ninguno'),
+        ...ctrl.vencidos.map(
+          (v) => ListTile(
+            dense: true,
+            leading: const Icon(
+              Icons.warning_amber,
+              color: Colors.orange,
+            ),
+            title: Text('${v['titulo']}'),
+            subtitle: Text(
+              'Socio: ${v['alias']} · salida ${soloFecha(v['fecha_salida'])}',
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class PanelVoz extends StatelessWidget {
+  const PanelVoz({super.key, required this.orden, required this.enviar});
 
   final TextEditingController orden;
   final void Function(String texto) enviar;
@@ -166,23 +178,17 @@ class PanelVoz extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(
-          'Órdenes de voz',
-          style: Theme.of(context).textTheme.titleMedium,
-        ),
+        Text('Órdenes de voz', style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 8),
         FilledButton.icon(
           onPressed: nui.escuchando ? nui.detener : nui.escuchar,
           icon: Icon(nui.escuchando ? Icons.mic : Icons.mic_none),
           label: Text(
-            nui.escuchando
-                ? 'Escuchando… (pulsa para parar)'
-                : 'Hablar',
+            nui.escuchando ? 'Escuchando… (pulsa para parar)' : 'Hablar',
           ),
         ),
         if (nui.escuchando) const LinearProgressIndicator(),
-        if (nui.ultimoTexto.isNotEmpty)
-          Text('Has dicho: ${nui.ultimoTexto}'),
+        if (nui.ultimoTexto.isNotEmpty) Text('Has dicho: ${nui.ultimoTexto}'),
         if (nui.respuesta.isNotEmpty)
           Text(
             nui.respuesta,
