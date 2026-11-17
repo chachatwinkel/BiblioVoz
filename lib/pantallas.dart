@@ -5,9 +5,10 @@ import 'camara_manos.dart';
 import 'controlador.dart';
 import 'db.dart';
 import 'nui.dart';
+import 'tema.dart';
 import 'package:ui_kit_biblio/ui_kit_biblio.dart';
 import 'l10n/app_localizations.dart';
-// ---------- Utilidades ----------
+// ---------- Utilidades ---------- 
 
 void ir(BuildContext context, Widget pantalla) =>
     Navigator.push(context, MaterialPageRoute(builder: (_) => pantalla));
@@ -93,8 +94,14 @@ class _PantallaInicioState extends State<PantallaInicio> {
               children: [
                 AvisoPrivacidad(),
                 const SizedBox(height: 16),
-                PanelVoz(orden: orden, enviar: enviar),
-                const SizedBox(height: 16),
+                Card(
+                  margin: EdgeInsets.zero,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: PanelVoz(orden: orden, enviar: enviar),
+                  ),
+                ),
+                const SizedBox(height: 12),
                 OutlinedButton.icon(
                   onPressed: nui.sacudir,
                   icon: const Icon(Icons.vibration),
@@ -111,36 +118,63 @@ class _PantallaInicioState extends State<PantallaInicio> {
                     ),
                   ),
                 if (nui.sugerencia != null) tarjetaLibro(context, nui.sugerencia!),
-                const Divider(height: 32),
-                ListTile(
-                  leading: const Icon(Icons.menu_book),
-                  title: const Text('Catálogo'),
-                  onTap: () => ir(context, const PantallaCatalogo()),
+                const SizedBox(height: 20),
+                Card(
+                  margin: EdgeInsets.zero,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    child: Column(
+                      children: [
+                        ListTile(
+                          leading: const Icon(Icons.menu_book),
+                          title: const Text('Catálogo'),
+                          trailing: const Icon(Icons.chevron_right),
+                          onTap: () => ir(context, const PantallaCatalogo()),
+                        ),
+                        ListTile(
+                          leading: const Icon(Icons.people),
+                          title: const Text('Socios'),
+                          trailing: const Icon(Icons.chevron_right),
+                          onTap: () => ir(context, const PantallaSocios()),
+                        ),
+                        ListTile(
+                          leading: const Icon(Icons.outbox),
+                          title: const Text('Préstamos activos'),
+                          trailing: const Icon(Icons.chevron_right),
+                          onTap: () => ir(context, const PantallaPrestamos()),
+                        ),
+                        ListTile(
+                          leading: const Icon(Icons.thumbs_up_down),
+                          title: const Text('Valoración por gestos'),
+                          trailing: const Icon(Icons.chevron_right),
+                          onTap: () => ir(context, const PantallaValoracion()),
+                        ),
+                        ListTile(
+                          leading: const Icon(Icons.settings),
+                          title: const Text('Ajustes y permisos'),
+                          trailing: const Icon(Icons.chevron_right),
+                          onTap: () => ir(context, const PantallaAjustes()),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-                ListTile(
-                  leading: const Icon(Icons.people),
-                  title: const Text('Socios'),
-                  onTap: () => ir(context, const PantallaSocios()),
+                const SizedBox(height: 20),
+                Card(
+                  margin: EdgeInsets.zero,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: ListaVencidos(),
+                  ),
                 ),
-                ListTile(
-                  leading: const Icon(Icons.outbox),
-                  title: const Text('Préstamos activos'),
-                  onTap: () => ir(context, const PantallaPrestamos()),
+                const SizedBox(height: 12),
+                Card(
+                  margin: EdgeInsets.zero,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: ResumenGenero(),
+                  ),
                 ),
-                ListTile(
-                  leading: const Icon(Icons.thumbs_up_down),
-                  title: const Text('Valoración por gestos'),
-                  onTap: () => ir(context, const PantallaValoracion()),
-                ),
-                ListTile(
-                  leading: const Icon(Icons.settings),
-                  title: const Text('Ajustes y permisos'),
-                  onTap: () => ir(context, const PantallaAjustes()),
-                ),
-                const Divider(height: 32),
-                ListaVencidos(),
-                const SizedBox(height: 16),
-                ResumenGenero(),
               ],
             ),
           ),
@@ -167,6 +201,7 @@ class ResumenGenero extends StatelessWidget {
         ...ctrl.porGenero.entries.map(
           (e) => ListTile(
             dense: true,
+            contentPadding: EdgeInsets.zero,
             title: Text(e.key),
             trailing: Text('${e.value}'),
           ),
@@ -188,11 +223,13 @@ class ListaVencidos extends StatelessWidget {
           'Préstamos vencidos (JOIN)',
           style: Theme.of(context).textTheme.titleMedium,
         ),
+        const SizedBox(height: 4),
         if (ctrl.vencidos.isEmpty) const Text('Ninguno'),
         ...ctrl.vencidos.map(
           (v) => ListTile(
             dense: true,
-            leading: const Icon(Icons.warning_amber, color: Colors.orange),
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.warning_amber, color: Paleta.aviso),
             title: Text('${v['titulo']}'),
             subtitle: Text(
               'Socio: ${v['alias']} · salida ${soloFecha(v['fecha_salida'])}',
@@ -216,7 +253,7 @@ class PanelVoz extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text('Órdenes de voz', style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: 8),
+        const SizedBox(height: 12),
         FilledButton.icon(
           onPressed: nui.escuchando ? nui.detener : nui.escuchar,
           icon: Icon(nui.escuchando ? Icons.mic : Icons.mic_none),
@@ -252,9 +289,12 @@ class PanelVoz extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 4),
-        const Text(
+        const SizedBox(height: 8),
+        Text(
           'Órdenes: «Busca libros de ciencia ficción» · «Devuelve el préstamo del libro Dune»',
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
         ),
       ],
     );
@@ -266,16 +306,27 @@ class AvisoPrivacidad extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Card(
+    final cs = Theme.of(context).colorScheme;
+    return Card(
+      margin: EdgeInsets.zero,
+      color: cs.secondaryContainer,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
-        padding: EdgeInsets.all(12),
-        child: Padding(
-          padding: EdgeInsets.all(8.0),
-          child: Text(
-            'Privacidad: el micrófono solo se usa para tus órdenes de voz. '
-            'El navegador procesa el audio y no se guarda; en la base de '
-            'datos solo se guarda el texto de la orden.',
-          ),
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(Icons.lock_outline, color: cs.onSecondaryContainer),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Privacidad: el micrófono solo se usa para tus órdenes de voz. '
+                'El navegador procesa el audio y no se guarda; en la base de '
+                'datos solo se guarda el texto de la orden.',
+                style: TextStyle(color: cs.onSecondaryContainer),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -350,12 +401,12 @@ class _PantallaCatalogoState extends State<PantallaCatalogo> {
                           key: ValueKey(l.id),
                           direction: DismissDirection.endToStart,
                           background: Container(
-                            color: Colors.red,
+                            color: Theme.of(context).colorScheme.error,
                             alignment: Alignment.centerRight,
                             padding: const EdgeInsets.only(right: 20),
-                            child: const Icon(
+                            child: Icon(
                               Icons.delete,
-                              color: Colors.white,
+                              color: Theme.of(context).colorScheme.onError,
                             ),
                           ),
                           confirmDismiss: (_) async {
@@ -416,14 +467,36 @@ class PantallaFichaLibro extends StatelessWidget {
           body: ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              const Icon(Icons.menu_book, size: 96),
-              ListTile(title: const Text('Título'), subtitle: Text(l.titulo)),
-              ListTile(title: const Text('Autor'), subtitle: Text(l.autor)),
-              ListTile(title: const Text('ISBN'), subtitle: Text(l.isbn)),
-              ListTile(title: const Text('Género'), subtitle: Text(l.genero)),
-              ListTile(
-                title: const Text('Estado'),
-                subtitle: Text(prestado ? 'Prestado' : 'Disponible'),
+              Center(
+                child: Container(
+                  width: 120,
+                  height: 160,
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Icon(
+                    Icons.menu_book,
+                    size: 64,
+                    color: Theme.of(context).colorScheme.onPrimaryContainer,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Card(
+                margin: EdgeInsets.zero,
+                child: Column(
+                  children: [
+                    ListTile(title: const Text('Título'), subtitle: Text(l.titulo)),
+                    ListTile(title: const Text('Autor'), subtitle: Text(l.autor)),
+                    ListTile(title: const Text('ISBN'), subtitle: Text(l.isbn)),
+                    ListTile(title: const Text('Género'), subtitle: Text(l.genero)),
+                    ListTile(
+                      title: const Text('Estado'),
+                      subtitle: Text(prestado ? 'Prestado' : 'Disponible'),
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: 12),
               const SizedBox(height: 12),
@@ -510,15 +583,18 @@ class _PantallaAltaLibroState extends State<PantallaAltaLibro> {
               decoration: const InputDecoration(labelText: 'Título'),
               validator: _obligatorio,
             ),
+            const SizedBox(height: 12),
             TextFormField(
               controller: _autor,
               decoration: const InputDecoration(labelText: 'Autor'),
               validator: _obligatorio,
             ),
+            const SizedBox(height: 12),
             TextFormField(
               controller: _isbn,
               decoration: const InputDecoration(labelText: 'ISBN'),
             ),
+            const SizedBox(height: 12),
             TextFormField(
               controller: _genero,
               decoration: const InputDecoration(labelText: 'Género'),
@@ -551,6 +627,7 @@ Future<void> dialogoSocio(BuildContext context, [Socio? s]) async {
             controller: alias,
             decoration: const InputDecoration(labelText: 'Alias'),
           ),
+          const SizedBox(height: 12),
           TextField(
             controller: curso,
             decoration: const InputDecoration(labelText: 'Curso'),
@@ -594,7 +671,12 @@ class PantallaSocios extends StatelessWidget {
           children: [
             for (final s in ctrl.socios)
               ListTile(
-                leading: const Icon(Icons.person),
+                leading: CircleAvatar(
+                  backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                  foregroundColor:
+                      Theme.of(context).colorScheme.onPrimaryContainer,
+                  child: const Icon(Icons.person),
+                ),
                 title: Text(s.alias),
                 subtitle: Text(s.curso),
                 onTap: () => ir(context, PantallaFichaSocio(s)),
@@ -651,8 +733,16 @@ class PantallaFichaSocio extends StatelessWidget {
           body: ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              ListTile(title: const Text('Alias'), subtitle: Text(s.alias)),
-              ListTile(title: const Text('Curso'), subtitle: Text(s.curso)),
+              Card(
+                margin: EdgeInsets.zero,
+                child: Column(
+                  children: [
+                    ListTile(title: const Text('Alias'), subtitle: Text(s.alias)),
+                    ListTile(title: const Text('Curso'), subtitle: Text(s.curso)),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
               FilledButton.icon(
                 icon: const Icon(Icons.outbox),
                 label: const Text('Nuevo préstamo para este socio'),
@@ -727,7 +817,7 @@ class PantallaPrestamos extends StatelessWidget {
                         ? Icons.warning_amber
                         : Icons.book,
                     color: vencidos.contains(p['prestamo_id'])
-                        ? Colors.orange
+                        ? Paleta.aviso
                         : null,
                   ),
                   title: Text('${p['titulo']}'),
@@ -1100,7 +1190,7 @@ class _FichaFlotanteState extends State<FichaFlotante> {
               'Ficha de "${widget.libro.titulo}" colocada sobre el libro',
             ),
             child: Card(
-              color: const Color(0xB3000000),
+              color: Paleta.carbon.withValues(alpha: 0.85),
               child: Padding(
                 padding: const EdgeInsets.all(10),
                 child: ConstrainedBox(
@@ -1130,7 +1220,7 @@ class _FichaFlotanteState extends State<FichaFlotante> {
                         mainAxisSize: MainAxisSize.min,
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(Icons.star, color: Colors.amber, size: 18),
+                          const Icon(Icons.star, color: Paleta.lavanda, size: 18),
                           const SizedBox(width: 4),
                           Text(
                             _nota == null

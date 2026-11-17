@@ -4,6 +4,7 @@ import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
 
 import 'controlador.dart';
 import 'pantallas.dart';
+import 'tema.dart';
 import 'l10n/app_localizations.dart';
 
 Future<void> main() async {
@@ -17,13 +18,7 @@ Future<void> main() async {
 class BiblioVozApp extends StatelessWidget {
   const BiblioVozApp({super.key});
 
-  ThemeData _tema(Brightness brillo) => ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.indigo,
-          brightness: brillo,
-        ),
-      );
+    ThemeData _tema(Brightness brillo) => temaBiblio(brillo);
 
    @override
   Widget build(BuildContext context) {
