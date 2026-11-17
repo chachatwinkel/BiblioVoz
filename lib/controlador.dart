@@ -6,7 +6,8 @@ import 'db.dart';
 
 /// Tema elegido por el usuario (claro/oscuro).
 final ValueNotifier<ThemeMode> modoTema = ValueNotifier(ThemeMode.light);
-
+/// Idioma elegido por el usuario (es o en).
+final ValueNotifier<Locale> idioma = ValueNotifier(const Locale('en'));
 /// Controlador único de la app (patrón MVC con ChangeNotifier).
 final BibliotecaController ctrl = BibliotecaController();
 

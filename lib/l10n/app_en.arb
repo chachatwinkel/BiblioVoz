@@ -1,0 +1,8 @@
+
+{
+  "@@locale": "en",
+  "appTitle": "BiblioVoz",
+  "idioma": "Language",
+  "prestamosActivosTitulo": "{count, plural, =0{No active loans} =1{1 active loan} other{{count} active loans}}",
+  "salidaEl": "Borrowed on {fecha}"
+}

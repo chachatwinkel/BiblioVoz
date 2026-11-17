@@ -6,7 +6,7 @@ import 'controlador.dart';
 import 'db.dart';
 import 'nui.dart';
 import 'package:ui_kit_biblio/ui_kit_biblio.dart';
-
+import 'l10n/app_localizations.dart';
 // ---------- Utilidades ----------
 
 void ir(BuildContext context, Widget pantalla) =>
@@ -699,7 +699,13 @@ class PantallaPrestamos extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Préstamos activos')),
+            appBar: AppBar(
+        title: ListenableBuilder(
+          listenable: ctrl,
+          builder: (context, _) => Text(AppLocalizations.of(context)!
+              .prestamosActivosTitulo(ctrl.activos.length)),
+        ),
+      ),
       floatingActionButton: FloatingActionButton(
         tooltip: 'Nuevo préstamo',
         onPressed: () => ir(context, const PantallaNuevoPrestamo()),
@@ -726,8 +732,7 @@ class PantallaPrestamos extends StatelessWidget {
                   ),
                   title: Text('${p['titulo']}'),
                   subtitle: Text(
-                    'Socio: ${p['alias']} · salida ${soloFecha(p['fecha_salida'])}',
-                  ),
+                      'Socio: ${p['alias']} · ${AppLocalizations.of(context)!.salidaEl(DateTime.parse(p['fecha_salida'] as String))}'),
                   trailing: TextButton(
                     child: const Text('Devolver'),
                     onPressed: () async {
@@ -967,6 +972,21 @@ class PantallaAjustes extends StatelessWidget {
                 value: modo == ThemeMode.dark,
                 onChanged: (v) =>
                     modoTema.value = v ? ThemeMode.dark : ThemeMode.light,
+              ),
+            ),
+                       ValueListenableBuilder<Locale>(
+              valueListenable: idioma,
+              builder: (context, loc, _) => ListTile(
+                leading: const Icon(Icons.language),
+                title: Text(AppLocalizations.of(context)!.idioma),
+                trailing: SegmentedButton<String>(
+                  segments: const [
+                    ButtonSegment(value: 'es', label: Text('ES')),
+                    ButtonSegment(value: 'en', label: Text('EN')),
+                  ],
+                  selected: {loc.languageCode},
+                  onSelectionChanged: (s) => idioma.value = Locale(s.first),
+                ),
               ),
             ),
             SwitchListTile(
