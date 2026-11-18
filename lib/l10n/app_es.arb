@@ -1,18 +1,130 @@
-
 {
   "@@locale": "es",
   "appTitle": "BiblioVoz",
-  "idioma": "Idioma",
-  "prestamosActivosTitulo": "{count, plural, =0{Sin préstamos activos} =1{1 préstamo activo} other{{count} préstamos activos}}",
-  "@prestamosActivosTitulo": {
-    "placeholders": {
-      "count": { "type": "int" }
-    }
-  },
+
+  "navCatalogo": "Catálogo",
+  "navSocios": "Socios",
+  "navPrestamosActivos": "Préstamos activos",
+  "navValoracion": "Valoración por gestos",
+  "navAjustes": "Ajustes y permisos",
+
+  "proponerLibroAzar": "Proponer libro al azar (sacudir / F2)",
+  "prestamosPorGenero": "Préstamos por género (COUNT)",
+  "prestamosVencidos": "Préstamos vencidos (JOIN)",
+  "ninguno": "Ninguno",
+  "socioAlias": "Socio: {alias}",
+  "@socioAlias": { "placeholders": { "alias": { "type": "String" } } },
+
+  "ordenesVoz": "Órdenes de voz",
+  "escuchando": "Escuchando… (pulsa para parar)",
+  "hablar": "Hablar",
+  "hasDicho": "Has dicho: {texto}",
+  "@hasDicho": { "placeholders": { "texto": { "type": "String" } } },
+  "escribeOrden": "O escribe una orden",
+  "hintOrden": "Busca libros de ciencia ficción",
+  "enviar": "Enviar",
+  "ejemplosOrdenes": "Órdenes: «Busca libros de ciencia ficción» · «Devuelve el préstamo del libro Dune»",
+  "avisoPrivacidadInicio": "Privacidad: el micrófono solo se usa cuando pulsas «Hablar». El reconocimiento de voz lo hace el navegador y puede enviar el audio al servicio de su fabricante. En la base de datos solo se guarda el texto de la orden.",
+
+  "anadirLibro": "Añadir libro",
+  "buscarHint": "Buscar por título, autor o género (Ctrl+F)",
+  "sinResultados": "Sin resultados",
+  "libroBorrado": "Libro borrado",
+  "socioBorrado": "Socio borrado",
+  "noSePuedeBorrar": "No se puede borrar: tiene préstamos",
+
+  "estadoPrestado": "Prestado",
+  "estadoDisponible": "Disponible",
+  "prestar": "Prestar",
+  "pulgarAbajo": "Pulgar abajo",
+  "pulgarArriba": "Pulgar arriba",
+  "sinValorar": "Sin valorar",
+
+  "editar": "Editar",
+  "campoTitulo": "Título",
+  "campoAutor": "Autor",
+  "campoIsbn": "ISBN",
+  "campoGenero": "Género",
+  "campoEstado": "Estado",
+  "prestarEsteLibro": "Prestar este libro",
+
+  "nuevoLibro": "Nuevo libro",
+  "editarLibro": "Editar libro",
+  "campoObligatorio": "Campo obligatorio",
+  "guardar": "Guardar",
+  "cancelar": "Cancelar",
+
+  "anadirSocio": "Añadir socio",
+  "borrar": "Borrar",
+  "nuevoSocio": "Nuevo socio",
+  "editarSocio": "Editar socio",
+  "campoAlias": "Alias",
+  "campoCurso": "Curso",
+
+  "nuevoPrestamoSocio": "Nuevo préstamo para este socio",
+  "historialPrestamos": "Historial de préstamos (JOIN)",
+  "sinPrestamos": "Sin préstamos",
   "salidaEl": "Salida el {fecha}",
-  "@salidaEl": {
-    "placeholders": {
-      "fecha": { "type": "DateTime", "format": "yMMMd" }
-    }
-  }
+  "@salidaEl": { "placeholders": { "fecha": { "type": "DateTime", "format": "yMMMd" } } },
+  "salidaFecha": "Salida {fecha}",
+  "@salidaFecha": { "placeholders": { "fecha": { "type": "DateTime", "format": "yMMMd" } } },
+  "sinDevolver": "sin devolver",
+  "devueltoFecha": "devuelto {fecha}",
+  "@devueltoFecha": { "placeholders": { "fecha": { "type": "DateTime", "format": "yMMMd" } } },
+
+  "prestamosActivosTitulo": "{count, plural, =0{Sin préstamos activos} =1{1 préstamo activo} other{{count} préstamos activos}}",
+  "@prestamosActivosTitulo": { "placeholders": { "count": { "type": "int" } } },
+  "noHayPrestamosActivos": "No hay préstamos activos",
+  "nuevoPrestamo": "Nuevo préstamo",
+  "devolver": "Devolver",
+
+  "libroSoloDisponibles": "Libro (solo los disponibles)",
+  "eligeLibro": "Elige un libro",
+  "socio": "Socio",
+  "eligeSocio": "Elige un socio",
+  "guardarPrestamo": "Guardar préstamo",
+  "libroYaPrestado": "Ese libro ya está prestado",
+
+  "eligeLibroValorar": "Elige el libro devuelto y valóralo con el pulgar.",
+  "libroHint": "Libro",
+  "maquetaAR": "Realidad aumentada (maqueta): activa la cámara y arrastra la ficha sobre tu libro físico.",
+  "ultimasValoraciones": "Últimas valoraciones (SQLite)",
+  "todaviaNoValoraciones": "Todavía no hay valoraciones",
+  "sinValoraciones": "Sin valoraciones",
+
+  "modoOscuro": "Modo oscuro",
+  "idioma": "Idioma",
+  "respuestasHabladas": "Respuestas habladas",
+  "permisoMicrofono": "Permiso de micrófono",
+  "permisoCamara": "Permiso de cámara",
+  "comprobar": "Comprobar",
+  "sePideAlValorar": "Se pide al valorar",
+  "avisoPrivacidadTitulo": "Aviso de privacidad",
+  "avisoPrivacidadAjustes": "BiblioVoz usa el micrófono solo cuando pulsas «Hablar» y la cámara solo cuando pulsas «Valorar con la cámara». La imagen de la cámara se procesa en tu navegador y no se envía ni se guarda. El reconocimiento de voz lo hace el navegador y puede enviar el audio al servicio de su fabricante. En la base de datos solo se guarda el texto de las órdenes, las sacudidas, las valoraciones y la colocación de la ficha de AR.",
+  "registroNui": "Registro de la interfaz natural (SQLite)",
+  "sinRegistros": "Sin registros",
+
+  "estadoSinComprobar": "Sin comprobar",
+  "micDisponible": "Micrófono disponible",
+  "noDisponiblePermiso": "No disponible o permiso denegado",
+  "camaraActiva": "Cámara activa",
+  "camaraApagada": "Cámara apagada",
+
+  "valorarConCamara": "Valorar con la cámara (pulgar)",
+  "cargandoDetector": "Cargando detector…",
+  "desactivarCamara": "Desactivar cámara",
+  "avisoCamara": "La cámara solo se enciende al pulsar el botón. La imagen se procesa en tu navegador y no se envía ni se guarda.",
+
+  "errorVoz": "Error de voz: {error}",
+  "@errorVoz": { "placeholders": { "error": { "type": "String" } } },
+  "noPuedoMicrofono": "No puedo usar el micrófono. Escribe la orden en el cuadro.",
+  "encontradosLibros": "{count, plural, =0{No he encontrado libros de {tema}} =1{He encontrado 1 libro de {tema}} other{He encontrado {count} libros de {tema}}}",
+  "@encontradosLibros": { "placeholders": { "count": { "type": "int" }, "tema": { "type": "String" } } },
+  "prestamoDevuelto": "Préstamo de {titulo} devuelto",
+  "@prestamoDevuelto": { "placeholders": { "titulo": { "type": "String" } } },
+  "noEncuentroPrestamo": "No encuentro ese préstamo activo",
+  "noEntendido": "No he entendido la orden",
+  "sinLibrosDisponibles": "No hay libros disponibles",
+  "tePropongo": "Te propongo: {titulo}",
+  "@tePropongo": { "placeholders": { "titulo": { "type": "String" } } }
 }

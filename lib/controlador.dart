@@ -3,11 +3,18 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 
 import 'db.dart';
+import 'l10n/app_localizations.dart';
 
 /// Tema elegido por el usuario (claro/oscuro).
 final ValueNotifier<ThemeMode> modoTema = ValueNotifier(ThemeMode.light);
+
 /// Idioma elegido por el usuario (es o en).
-final ValueNotifier<Locale> idioma = ValueNotifier(const Locale('en'));
+final ValueNotifier<Locale> idioma = ValueNotifier(const Locale('es'));
+
+/// Textos traducidos para el código que no tiene BuildContext
+/// (controlador y voz). En los widgets se usa AppLocalizations.of(context).
+AppLocalizations get textos => lookupAppLocalizations(idioma.value);
+
 /// Controlador único de la app (patrón MVC con ChangeNotifier).
 final BibliotecaController ctrl = BibliotecaController();
 
@@ -89,7 +96,7 @@ class BibliotecaController extends ChangeNotifier {
   // ---- Préstamos ----
   /// Devuelve un mensaje de error o null si todo fue bien.
   Future<String?> nuevoPrestamo(int libroId, int socioId) async {
-    if (librosPrestados.contains(libroId)) return 'Ese libro ya está prestado';
+    if (librosPrestados.contains(libroId)) return textos.libroYaPrestado;
     await _repo.insertarPrestamo(Prestamo(
       libroId: libroId,
       socioId: socioId,
@@ -106,10 +113,10 @@ class BibliotecaController extends ChangeNotifier {
 
   /// Devuelve el título del libro devuelto, o null si no hay préstamo activo.
   Future<String?> devolverPorTitulo(String texto) async {
-    final t = texto.toLowerCase();
+    final q = texto.toLowerCase();
     for (final a in activos) {
       final titulo = a['titulo'] as String;
-      if (titulo.toLowerCase().contains(t)) {
+      if (titulo.toLowerCase().contains(q)) {
         await devolver(a['prestamo_id'] as int);
         return titulo;
       }

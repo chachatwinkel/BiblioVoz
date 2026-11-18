@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:ui_kit_biblio/ui_kit_biblio.dart';
 
 import 'camara_manos.dart';
 import 'controlador.dart';
 import 'db.dart';
-import 'nui.dart';
-import 'tema.dart';
-import 'package:ui_kit_biblio/ui_kit_biblio.dart';
 import 'l10n/app_localizations.dart';
-// ---------- Utilidades ---------- 
+import 'nui.dart';
+
+// ---------- Utilidades ----------
 
 void ir(BuildContext context, Widget pantalla) =>
     Navigator.push(context, MaterialPageRoute(builder: (_) => pantalla));
@@ -18,31 +18,53 @@ void aviso(BuildContext context, String mensaje) =>
         .showSnackBar(SnackBar(content: Text(mensaje)));
 
 String soloFecha(Object? iso) => (iso as String).substring(0, 10);
-/// BookCard alimentado con un libro de SQLite.
-BookCard tarjetaLibro(BuildContext context, Libro l) => BookCard(
-      title: l.titulo,
-      author: l.autor,
-      borrowed: ctrl.librosPrestados.contains(l.id),
-      borrowedLabel: 'Prestado',
-      availableLabel: 'Disponible',
-      loanTooltip: 'Prestar',
-      onTap: () => ir(context, PantallaFichaLibro(l)),
-      onLoan: () => ir(context, PantallaNuevoPrestamo(libro: l)),
-    );
 
-/// ThumbRating con los textos en español.
-ThumbRating pulgares({
+/// Estado del micrófono traducido al idioma actual.
+String textoMic(AppLocalizations t, EstadoMic e) => switch (e) {
+      EstadoMic.sinComprobar => t.estadoSinComprobar,
+      EstadoMic.disponible => t.micDisponible,
+      EstadoMic.noDisponible => t.noDisponiblePermiso,
+    };
+
+/// Estado de la cámara traducido al idioma actual.
+String textoCamara(AppLocalizations t, EstadoCamara e) => switch (e) {
+      EstadoCamara.sinComprobar => t.estadoSinComprobar,
+      EstadoCamara.activa => t.camaraActiva,
+      EstadoCamara.apagada => t.camaraApagada,
+      EstadoCamara.noDisponible => t.noDisponiblePermiso,
+    };
+
+/// BookCard alimentado con un libro de SQLite.
+BookCard tarjetaLibro(BuildContext context, Libro l) {
+  final t = AppLocalizations.of(context)!;
+  return BookCard(
+    title: l.titulo,
+    author: l.autor,
+    borrowed: ctrl.librosPrestados.contains(l.id),
+    borrowedLabel: t.estadoPrestado,
+    availableLabel: t.estadoDisponible,
+    loanTooltip: t.prestar,
+    onTap: () => ir(context, PantallaFichaLibro(l)),
+    onLoan: () => ir(context, PantallaNuevoPrestamo(libro: l)),
+  );
+}
+
+/// ThumbRating con los textos en el idioma actual.
+ThumbRating pulgares(
+  BuildContext context, {
   Key? key,
   int inicial = 0,
   required ValueChanged<int> onChanged,
-}) =>
-    ThumbRating(
-      key: key,
-      initialValue: inicial,
-      onChanged: onChanged,
-      downTooltip: 'Pulgar abajo',
-      upTooltip: 'Pulgar arriba',
-    );
+}) {
+  final t = AppLocalizations.of(context)!;
+  return ThumbRating(
+    key: key,
+    initialValue: inicial,
+    onChanged: onChanged,
+    downTooltip: t.pulgarAbajo,
+    upTooltip: t.pulgarArriba,
+  );
+}
 
 // =====================================================================
 // 1. INICIO
@@ -78,103 +100,60 @@ class _PantallaInicioState extends State<PantallaInicio> {
 
   @override
   Widget build(BuildContext context) {
-    final orden = _orden;
-    final enviar = _enviar;
+    final t = AppLocalizations.of(context)!;
     return CallbackShortcuts(
       // F2 simula la sacudida del móvil en el ordenador.
       bindings: {const SingleActivator(LogicalKeyboardKey.f2): nui.sacudir},
       child: Focus(
         autofocus: true,
         child: Scaffold(
-          appBar: AppBar(title: const Text('BiblioVoz')),
+          appBar: AppBar(title: Text(t.appTitle)),
           body: ListenableBuilder(
             listenable: Listenable.merge([ctrl, nui]),
             builder: (context, _) => ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                AvisoPrivacidad(),
+                const AvisoPrivacidad(),
                 const SizedBox(height: 16),
-                Card(
-                  margin: EdgeInsets.zero,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: PanelVoz(orden: orden, enviar: enviar),
-                  ),
-                ),
-                const SizedBox(height: 12),
+                PanelVoz(orden: _orden, enviar: _enviar),
+                const SizedBox(height: 16),
                 OutlinedButton.icon(
                   onPressed: nui.sacudir,
                   icon: const Icon(Icons.vibration),
-                  label: const Text('Proponer libro al azar (sacudir / F2)'),
+                  label: Text(t.proponerLibroAzar),
                 ),
                 if (nui.sugerencia != null)
-                  Card(
-                    child: ListTile(
-                      leading: const Icon(Icons.auto_awesome),
-                      title: Text(nui.sugerencia!.titulo),
-                      subtitle: Text(nui.sugerencia!.autor),
-                      onTap: () =>
-                          ir(context, PantallaFichaLibro(nui.sugerencia!)),
-                    ),
-                  ),
-                if (nui.sugerencia != null) tarjetaLibro(context, nui.sugerencia!),
-                const SizedBox(height: 20),
-                Card(
-                  margin: EdgeInsets.zero,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 6),
-                    child: Column(
-                      children: [
-                        ListTile(
-                          leading: const Icon(Icons.menu_book),
-                          title: const Text('Catálogo'),
-                          trailing: const Icon(Icons.chevron_right),
-                          onTap: () => ir(context, const PantallaCatalogo()),
-                        ),
-                        ListTile(
-                          leading: const Icon(Icons.people),
-                          title: const Text('Socios'),
-                          trailing: const Icon(Icons.chevron_right),
-                          onTap: () => ir(context, const PantallaSocios()),
-                        ),
-                        ListTile(
-                          leading: const Icon(Icons.outbox),
-                          title: const Text('Préstamos activos'),
-                          trailing: const Icon(Icons.chevron_right),
-                          onTap: () => ir(context, const PantallaPrestamos()),
-                        ),
-                        ListTile(
-                          leading: const Icon(Icons.thumbs_up_down),
-                          title: const Text('Valoración por gestos'),
-                          trailing: const Icon(Icons.chevron_right),
-                          onTap: () => ir(context, const PantallaValoracion()),
-                        ),
-                        ListTile(
-                          leading: const Icon(Icons.settings),
-                          title: const Text('Ajustes y permisos'),
-                          trailing: const Icon(Icons.chevron_right),
-                          onTap: () => ir(context, const PantallaAjustes()),
-                        ),
-                      ],
-                    ),
-                  ),
+                  tarjetaLibro(context, nui.sugerencia!),
+                const Divider(height: 32),
+                ListTile(
+                  leading: const Icon(Icons.menu_book),
+                  title: Text(t.navCatalogo),
+                  onTap: () => ir(context, const PantallaCatalogo()),
                 ),
-                const SizedBox(height: 20),
-                Card(
-                  margin: EdgeInsets.zero,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: ListaVencidos(),
-                  ),
+                ListTile(
+                  leading: const Icon(Icons.people),
+                  title: Text(t.navSocios),
+                  onTap: () => ir(context, const PantallaSocios()),
                 ),
-                const SizedBox(height: 12),
-                Card(
-                  margin: EdgeInsets.zero,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: ResumenGenero(),
-                  ),
+                ListTile(
+                  leading: const Icon(Icons.outbox),
+                  title: Text(t.navPrestamosActivos),
+                  onTap: () => ir(context, const PantallaPrestamos()),
                 ),
+                ListTile(
+                  leading: const Icon(Icons.thumbs_up_down),
+                  title: Text(t.navValoracion),
+                  onTap: () => ir(context, const PantallaValoracion()),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.settings),
+                  title: Text(t.navAjustes),
+                  onTap: () => ir(context, const PantallaAjustes()),
+                ),
+                const Divider(height: 32),
+                const ListaVencidos(),
+                const SizedBox(height: 16),
+                const ResumenGenero(),
               ],
             ),
           ),
@@ -185,23 +164,21 @@ class _PantallaInicioState extends State<PantallaInicio> {
 }
 
 class ResumenGenero extends StatelessWidget {
-  const ResumenGenero({
-    super.key,
-  });
+  const ResumenGenero({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          'Préstamos por género (COUNT)',
+          t.prestamosPorGenero,
           style: Theme.of(context).textTheme.titleMedium,
         ),
         ...ctrl.porGenero.entries.map(
           (e) => ListTile(
             dense: true,
-            contentPadding: EdgeInsets.zero,
             title: Text(e.key),
             trailing: Text('${e.value}'),
           ),
@@ -216,23 +193,23 @@ class ListaVencidos extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          'Préstamos vencidos (JOIN)',
+          t.prestamosVencidos,
           style: Theme.of(context).textTheme.titleMedium,
         ),
-        const SizedBox(height: 4),
-        if (ctrl.vencidos.isEmpty) const Text('Ninguno'),
+        if (ctrl.vencidos.isEmpty) Text(t.ninguno),
         ...ctrl.vencidos.map(
           (v) => ListTile(
             dense: true,
-            contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.warning_amber, color: Paleta.aviso),
+            leading: const Icon(Icons.warning_amber, color: Colors.orange),
             title: Text('${v['titulo']}'),
             subtitle: Text(
-              'Socio: ${v['alias']} · salida ${soloFecha(v['fecha_salida'])}',
+              '${t.socioAlias(v['alias'] as String)} · '
+              '${t.salidaEl(DateTime.parse(v['fecha_salida'] as String))}',
             ),
           ),
         ),
@@ -249,20 +226,19 @@ class PanelVoz extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('Órdenes de voz', style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: 12),
+        Text(t.ordenesVoz, style: Theme.of(context).textTheme.titleMedium),
+        const SizedBox(height: 8),
         FilledButton.icon(
           onPressed: nui.escuchando ? nui.detener : nui.escuchar,
           icon: Icon(nui.escuchando ? Icons.mic : Icons.mic_none),
-          label: Text(
-            nui.escuchando ? 'Escuchando… (pulsa para parar)' : 'Hablar',
-          ),
+          label: Text(nui.escuchando ? t.escuchando : t.hablar),
         ),
         if (nui.escuchando) const LinearProgressIndicator(),
-        if (nui.ultimoTexto.isNotEmpty) Text('Has dicho: ${nui.ultimoTexto}'),
+        if (nui.ultimoTexto.isNotEmpty) Text(t.hasDicho(nui.ultimoTexto)),
         if (nui.respuesta.isNotEmpty)
           Text(
             nui.respuesta,
@@ -274,28 +250,23 @@ class PanelVoz extends StatelessWidget {
             Expanded(
               child: TextField(
                 controller: orden,
-                decoration: const InputDecoration(
-                  labelText: 'O escribe una orden',
-                  hintText: 'Busca libros de ciencia ficción',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: t.escribeOrden,
+                  hintText: t.hintOrden,
+                  border: const OutlineInputBorder(),
                 ),
                 onSubmitted: enviar,
               ),
             ),
             IconButton(
-              tooltip: 'Enviar',
+              tooltip: t.enviar,
               icon: const Icon(Icons.send),
               onPressed: () => enviar(orden.text),
             ),
           ],
         ),
-        const SizedBox(height: 8),
-        Text(
-          'Órdenes: «Busca libros de ciencia ficción» · «Devuelve el préstamo del libro Dune»',
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-        ),
+        const SizedBox(height: 4),
+        Text(t.ejemplosOrdenes),
       ],
     );
   }
@@ -306,28 +277,11 @@ class AvisoPrivacidad extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
+    final t = AppLocalizations.of(context)!;
     return Card(
-      margin: EdgeInsets.zero,
-      color: cs.secondaryContainer,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(Icons.lock_outline, color: cs.onSecondaryContainer),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                'Privacidad: el micrófono solo se usa para tus órdenes de voz. '
-                'El navegador procesa el audio y no se guarda; en la base de '
-                'datos solo se guarda el texto de la orden.',
-                style: TextStyle(color: cs.onSecondaryContainer),
-              ),
-            ),
-          ],
-        ),
+        padding: const EdgeInsets.all(12),
+        child: Text(t.avisoPrivacidadInicio),
       ),
     );
   }
@@ -356,6 +310,7 @@ class _PantallaCatalogoState extends State<PantallaCatalogo> {
 
   @override
   Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context)!;
     return CallbackShortcuts(
       bindings: {
         const SingleActivator(LogicalKeyboardKey.keyF, control: true):
@@ -364,9 +319,9 @@ class _PantallaCatalogoState extends State<PantallaCatalogo> {
       child: Focus(
         autofocus: true,
         child: Scaffold(
-          appBar: AppBar(title: const Text('Catálogo')),
+          appBar: AppBar(title: Text(t.navCatalogo)),
           floatingActionButton: FloatingActionButton(
-            tooltip: 'Añadir libro',
+            tooltip: t.anadirLibro,
             onPressed: () => ir(context, const PantallaAltaLibro()),
             child: const Icon(Icons.add),
           ),
@@ -377,10 +332,10 @@ class _PantallaCatalogoState extends State<PantallaCatalogo> {
                 child: TextField(
                   controller: _busqueda,
                   focusNode: _foco,
-                  decoration: const InputDecoration(
-                    prefixIcon: Icon(Icons.search),
-                    hintText: 'Buscar por título, autor o género (Ctrl+F)',
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    prefixIcon: const Icon(Icons.search),
+                    hintText: t.buscarHint,
+                    border: const OutlineInputBorder(),
                   ),
                   onChanged: ctrl.buscar,
                 ),
@@ -391,7 +346,7 @@ class _PantallaCatalogoState extends State<PantallaCatalogo> {
                   builder: (context, _) {
                     final libros = ctrl.libros;
                     if (libros.isEmpty) {
-                      return const Center(child: Text('Sin resultados'));
+                      return Center(child: Text(t.sinResultados));
                     }
                     return ListView.builder(
                       itemCount: libros.length,
@@ -401,12 +356,12 @@ class _PantallaCatalogoState extends State<PantallaCatalogo> {
                           key: ValueKey(l.id),
                           direction: DismissDirection.endToStart,
                           background: Container(
-                            color: Theme.of(context).colorScheme.error,
+                            color: Colors.red,
                             alignment: Alignment.centerRight,
                             padding: const EdgeInsets.only(right: 20),
-                            child: Icon(
+                            child: const Icon(
                               Icons.delete,
-                              color: Theme.of(context).colorScheme.onError,
+                              color: Colors.white,
                             ),
                           ),
                           confirmDismiss: (_) async {
@@ -414,14 +369,12 @@ class _PantallaCatalogoState extends State<PantallaCatalogo> {
                             if (context.mounted) {
                               aviso(
                                 context,
-                                ok
-                                    ? 'Libro borrado'
-                                    : 'No se puede borrar: tiene préstamos',
+                                ok ? t.libroBorrado : t.noSePuedeBorrar,
                               );
                             }
                             return false; // la lista ya se recarga sola
                           },
-                        child: tarjetaLibro(context, l),
+                          child: tarjetaLibro(context, l),
                         );
                       },
                     );
@@ -445,6 +398,7 @@ class PantallaFichaLibro extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context)!;
     return ListenableBuilder(
       listenable: ctrl,
       builder: (context, _) {
@@ -458,7 +412,7 @@ class PantallaFichaLibro extends StatelessWidget {
             title: Text(l.titulo),
             actions: [
               IconButton(
-                tooltip: 'Editar',
+                tooltip: t.editar,
                 icon: const Icon(Icons.edit),
                 onPressed: () => ir(context, PantallaAltaLibro(libro: l)),
               ),
@@ -467,43 +421,27 @@ class PantallaFichaLibro extends StatelessWidget {
           body: ListView(
             padding: const EdgeInsets.all(16),
             children: [
+              const Icon(Icons.menu_book, size: 96),
+              ListTile(title: Text(t.campoTitulo), subtitle: Text(l.titulo)),
+              ListTile(title: Text(t.campoAutor), subtitle: Text(l.autor)),
+              ListTile(title: Text(t.campoIsbn), subtitle: Text(l.isbn)),
+              ListTile(title: Text(t.campoGenero), subtitle: Text(l.genero)),
+              ListTile(
+                title: Text(t.campoEstado),
+                subtitle: Text(
+                  prestado ? t.estadoPrestado : t.estadoDisponible,
+                ),
+              ),
+              const SizedBox(height: 12),
               Center(
-                child: Container(
-                  width: 120,
-                  height: 160,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primaryContainer,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Icon(
-                    Icons.menu_book,
-                    size: 64,
-                    color: Theme.of(context).colorScheme.onPrimaryContainer,
-                  ),
+                child: pulgares(
+                  context,
+                  onChanged: (v) => ctrl.valorar(l, v),
                 ),
               ),
-              const SizedBox(height: 16),
-              Card(
-                margin: EdgeInsets.zero,
-                child: Column(
-                  children: [
-                    ListTile(title: const Text('Título'), subtitle: Text(l.titulo)),
-                    ListTile(title: const Text('Autor'), subtitle: Text(l.autor)),
-                    ListTile(title: const Text('ISBN'), subtitle: Text(l.isbn)),
-                    ListTile(title: const Text('Género'), subtitle: Text(l.genero)),
-                    ListTile(
-                      title: const Text('Estado'),
-                      subtitle: Text(prestado ? 'Prestado' : 'Disponible'),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 12),
-              const SizedBox(height: 12),
-              Center(child: pulgares(onChanged: (v) => ctrl.valorar(l, v))),
               FilledButton.icon(
                 icon: const Icon(Icons.outbox),
-                label: const Text('Prestar este libro'),
+                label: Text(t.prestarEsteLibro),
                 onPressed: prestado
                     ? null
                     : () => ir(context, PantallaNuevoPrestamo(libro: l)),
@@ -550,9 +488,6 @@ class _PantallaAltaLibroState extends State<PantallaAltaLibro> {
     super.dispose();
   }
 
-  String? _obligatorio(String? v) =>
-      (v == null || v.trim().isEmpty) ? 'Campo obligatorio' : null;
-
   Future<void> _guardar() async {
     if (!_clave.currentState!.validate()) return;
     await ctrl.guardarLibro(
@@ -569,9 +504,12 @@ class _PantallaAltaLibroState extends State<PantallaAltaLibro> {
 
   @override
   Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context)!;
+    String? obligatorio(String? v) =>
+        (v == null || v.trim().isEmpty) ? t.campoObligatorio : null;
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.libro == null ? 'Nuevo libro' : 'Editar libro'),
+        title: Text(widget.libro == null ? t.nuevoLibro : t.editarLibro),
       ),
       body: Form(
         key: _clave,
@@ -580,27 +518,24 @@ class _PantallaAltaLibroState extends State<PantallaAltaLibro> {
           children: [
             TextFormField(
               controller: _titulo,
-              decoration: const InputDecoration(labelText: 'Título'),
-              validator: _obligatorio,
+              decoration: InputDecoration(labelText: t.campoTitulo),
+              validator: obligatorio,
             ),
-            const SizedBox(height: 12),
             TextFormField(
               controller: _autor,
-              decoration: const InputDecoration(labelText: 'Autor'),
-              validator: _obligatorio,
+              decoration: InputDecoration(labelText: t.campoAutor),
+              validator: obligatorio,
             ),
-            const SizedBox(height: 12),
             TextFormField(
               controller: _isbn,
-              decoration: const InputDecoration(labelText: 'ISBN'),
+              decoration: InputDecoration(labelText: t.campoIsbn),
             ),
-            const SizedBox(height: 12),
             TextFormField(
               controller: _genero,
-              decoration: const InputDecoration(labelText: 'Género'),
+              decoration: InputDecoration(labelText: t.campoGenero),
             ),
             const SizedBox(height: 24),
-            FilledButton(onPressed: _guardar, child: const Text('Guardar')),
+            FilledButton(onPressed: _guardar, child: Text(t.guardar)),
           ],
         ),
       ),
@@ -614,34 +549,34 @@ class _PantallaAltaLibroState extends State<PantallaAltaLibro> {
 
 /// Diálogo para crear o editar un socio.
 Future<void> dialogoSocio(BuildContext context, [Socio? s]) async {
+  final t = AppLocalizations.of(context)!;
   final alias = TextEditingController(text: s?.alias ?? '');
   final curso = TextEditingController(text: s?.curso ?? '');
   final ok = await showDialog<bool>(
     context: context,
     builder: (c) => AlertDialog(
-      title: Text(s == null ? 'Nuevo socio' : 'Editar socio'),
+      title: Text(s == null ? t.nuevoSocio : t.editarSocio),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           TextField(
             controller: alias,
-            decoration: const InputDecoration(labelText: 'Alias'),
+            decoration: InputDecoration(labelText: t.campoAlias),
           ),
-          const SizedBox(height: 12),
           TextField(
             controller: curso,
-            decoration: const InputDecoration(labelText: 'Curso'),
+            decoration: InputDecoration(labelText: t.campoCurso),
           ),
         ],
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(c, false),
-          child: const Text('Cancelar'),
+          child: Text(t.cancelar),
         ),
         FilledButton(
           onPressed: () => Navigator.pop(c, true),
-          child: const Text('Guardar'),
+          child: Text(t.guardar),
         ),
       ],
     ),
@@ -658,10 +593,11 @@ class PantallaSocios extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: AppBar(title: const Text('Socios')),
+      appBar: AppBar(title: Text(t.navSocios)),
       floatingActionButton: FloatingActionButton(
-        tooltip: 'Añadir socio',
+        tooltip: t.anadirSocio,
         onPressed: () => dialogoSocio(context),
         child: const Icon(Icons.person_add),
       ),
@@ -671,26 +607,19 @@ class PantallaSocios extends StatelessWidget {
           children: [
             for (final s in ctrl.socios)
               ListTile(
-                leading: CircleAvatar(
-                  backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                  foregroundColor:
-                      Theme.of(context).colorScheme.onPrimaryContainer,
-                  child: const Icon(Icons.person),
-                ),
+                leading: const Icon(Icons.person),
                 title: Text(s.alias),
                 subtitle: Text(s.curso),
                 onTap: () => ir(context, PantallaFichaSocio(s)),
                 trailing: IconButton(
-                  tooltip: 'Borrar',
+                  tooltip: t.borrar,
                   icon: const Icon(Icons.delete_outline),
                   onPressed: () async {
                     final ok = await ctrl.borrarSocio(s.id!);
                     if (context.mounted) {
                       aviso(
                         context,
-                        ok
-                            ? 'Socio borrado'
-                            : 'No se puede borrar: tiene préstamos',
+                        ok ? t.socioBorrado : t.noSePuedeBorrar,
                       );
                     }
                   },
@@ -712,6 +641,7 @@ class PantallaFichaSocio extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context)!;
     return ListenableBuilder(
       listenable: ctrl,
       builder: (context, _) {
@@ -724,7 +654,7 @@ class PantallaFichaSocio extends StatelessWidget {
             title: Text(s.alias),
             actions: [
               IconButton(
-                tooltip: 'Editar',
+                tooltip: t.editar,
                 icon: const Icon(Icons.edit),
                 onPressed: () => dialogoSocio(context, s),
               ),
@@ -733,31 +663,23 @@ class PantallaFichaSocio extends StatelessWidget {
           body: ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              Card(
-                margin: EdgeInsets.zero,
-                child: Column(
-                  children: [
-                    ListTile(title: const Text('Alias'), subtitle: Text(s.alias)),
-                    ListTile(title: const Text('Curso'), subtitle: Text(s.curso)),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
+              ListTile(title: Text(t.campoAlias), subtitle: Text(s.alias)),
+              ListTile(title: Text(t.campoCurso), subtitle: Text(s.curso)),
               FilledButton.icon(
                 icon: const Icon(Icons.outbox),
-                label: const Text('Nuevo préstamo para este socio'),
+                label: Text(t.nuevoPrestamoSocio),
                 onPressed: () => ir(context, PantallaNuevoPrestamo(socio: s)),
               ),
               const Divider(height: 32),
               Text(
-                'Historial de préstamos (JOIN)',
+                t.historialPrestamos,
                 style: Theme.of(context).textTheme.titleMedium,
               ),
               FutureBuilder<List<Map<String, Object?>>>(
                 future: ctrl.prestamosDeSocio(s.id!),
                 builder: (context, snap) {
                   if (!snap.hasData) return const LinearProgressIndicator();
-                  if (snap.data!.isEmpty) return const Text('Sin préstamos');
+                  if (snap.data!.isEmpty) return Text(t.sinPrestamos);
                   return Column(
                     children: [
                       for (final p in snap.data!)
@@ -765,7 +687,8 @@ class PantallaFichaSocio extends StatelessWidget {
                           dense: true,
                           title: Text('${p['titulo']}'),
                           subtitle: Text(
-                            'Salida ${soloFecha(p['fecha_salida'])} · ${p['fecha_devolucion'] == null ? 'sin devolver' : 'devuelto ${soloFecha(p['fecha_devolucion'])}'}',
+                            '${t.salidaFecha(DateTime.parse(p['fecha_salida'] as String))} · '
+                            '${p['fecha_devolucion'] == null ? t.sinDevolver : t.devueltoFecha(DateTime.parse(p['fecha_devolucion'] as String))}',
                           ),
                         ),
                     ],
@@ -788,16 +711,18 @@ class PantallaPrestamos extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context)!;
     return Scaffold(
-            appBar: AppBar(
+      appBar: AppBar(
         title: ListenableBuilder(
           listenable: ctrl,
-          builder: (context, _) => Text(AppLocalizations.of(context)!
-              .prestamosActivosTitulo(ctrl.activos.length)),
+          builder: (context, _) => Text(
+            t.prestamosActivosTitulo(ctrl.activos.length),
+          ),
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        tooltip: 'Nuevo préstamo',
+        tooltip: t.nuevoPrestamo,
         onPressed: () => ir(context, const PantallaNuevoPrestamo()),
         child: const Icon(Icons.add),
       ),
@@ -805,7 +730,7 @@ class PantallaPrestamos extends StatelessWidget {
         listenable: ctrl,
         builder: (context, _) {
           if (ctrl.activos.isEmpty) {
-            return const Center(child: Text('No hay préstamos activos'));
+            return Center(child: Text(t.noHayPrestamosActivos));
           }
           final vencidos = ctrl.vencidos.map((v) => v['prestamo_id']).toSet();
           return ListView(
@@ -817,14 +742,16 @@ class PantallaPrestamos extends StatelessWidget {
                         ? Icons.warning_amber
                         : Icons.book,
                     color: vencidos.contains(p['prestamo_id'])
-                        ? Paleta.aviso
+                        ? Colors.orange
                         : null,
                   ),
                   title: Text('${p['titulo']}'),
                   subtitle: Text(
-                      'Socio: ${p['alias']} · ${AppLocalizations.of(context)!.salidaEl(DateTime.parse(p['fecha_salida'] as String))}'),
+                    '${t.socioAlias(p['alias'] as String)} · '
+                    '${t.salidaEl(DateTime.parse(p['fecha_salida'] as String))}',
+                  ),
                   trailing: TextButton(
-                    child: const Text('Devolver'),
+                    child: Text(t.devolver),
                     onPressed: () async {
                       final libroId = p['libro_id'] as int;
                       await ctrl.devolver(p['prestamo_id'] as int);
@@ -877,18 +804,19 @@ class _PantallaNuevoPrestamoState extends State<PantallaNuevoPrestamo> {
 
   @override
   Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context)!;
     final disponibles = ctrl.todos
         .where((l) => !ctrl.librosPrestados.contains(l.id))
         .toList();
     return Scaffold(
-      appBar: AppBar(title: const Text('Nuevo préstamo')),
+      appBar: AppBar(title: Text(t.nuevoPrestamo)),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          const Text('Libro (solo los disponibles)'),
+          Text(t.libroSoloDisponibles),
           DropdownButton<int>(
             isExpanded: true,
-            hint: const Text('Elige un libro'),
+            hint: Text(t.eligeLibro),
             value: disponibles.any((l) => l.id == _libroId) ? _libroId : null,
             items: [
               for (final l in disponibles)
@@ -897,10 +825,10 @@ class _PantallaNuevoPrestamoState extends State<PantallaNuevoPrestamo> {
             onChanged: (v) => setState(() => _libroId = v),
           ),
           const SizedBox(height: 16),
-          const Text('Socio'),
+          Text(t.socio),
           DropdownButton<int>(
             isExpanded: true,
-            hint: const Text('Elige un socio'),
+            hint: Text(t.eligeSocio),
             value: ctrl.socios.any((s) => s.id == _socioId) ? _socioId : null,
             items: [
               for (final s in ctrl.socios)
@@ -914,7 +842,7 @@ class _PantallaNuevoPrestamoState extends State<PantallaNuevoPrestamo> {
           const SizedBox(height: 24),
           FilledButton(
             onPressed: (_libroId == null || _socioId == null) ? null : _guardar,
-            child: const Text('Guardar préstamo'),
+            child: Text(t.guardarPrestamo),
           ),
         ],
       ),
@@ -945,15 +873,16 @@ class _PantallaValoracionState extends State<PantallaValoracion> {
     _libroId = widget.libroId;
   }
 
-  String _textoValor(int v) =>
-      v == 1 ? 'Pulgar arriba' : (v == -1 ? 'Pulgar abajo' : 'Sin valorar');
+  String _textoValor(AppLocalizations t, int v) =>
+      v == 1 ? t.pulgarArriba : (v == -1 ? t.pulgarAbajo : t.sinValorar);
 
   /// Valoración recibida de los botones (táctil) o de la cámara (gesto).
   void _valorar(int v, String origen) {
+    final t = AppLocalizations.of(context)!;
     final libro = ctrl.todos.firstWhere((l) => l.id == _libroId);
     setState(() {
       _valor = v;
-      _feedback = _textoValor(v);
+      _feedback = _textoValor(t, v);
       if (origen == 'cámara') _version++;
     });
     ctrl.valorar(libro, v, origen: origen);
@@ -961,8 +890,9 @@ class _PantallaValoracionState extends State<PantallaValoracion> {
 
   @override
   Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: AppBar(title: const Text('Valoración por gestos')),
+      appBar: AppBar(title: Text(t.navValoracion)),
       body: ListenableBuilder(
         listenable: ctrl,
         builder: (context, _) {
@@ -973,18 +903,22 @@ class _PantallaValoracionState extends State<PantallaValoracion> {
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              const Text('Elige el libro devuelto y valóralo con el pulgar.'),
+              Text(t.eligeLibroValorar),
               const SizedBox(height: 8),
               DropdownButton<int>(
                 isExpanded: true,
-                hint: const Text('Libro'),
+                hint: Text(t.libroHint),
                 value: existe ? _libroId : null,
                 items: [
                   for (final l in ctrl.todos)
-                DropdownMenuItem(
-                  value: l.id!,
-                  child: Text(l.titulo, maxLines: 1, overflow: TextOverflow.ellipsis),
-                ),
+                    DropdownMenuItem(
+                      value: l.id!,
+                      child: Text(
+                        l.titulo,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
                 ],
                 onChanged: (v) => setState(() {
                   _libroId = v;
@@ -996,6 +930,7 @@ class _PantallaValoracionState extends State<PantallaValoracion> {
               if (existe)
                 Center(
                   child: pulgares(
+                    context,
                     key: ValueKey('$_libroId-$_version'),
                     inicial: _valor,
                     onChanged: (v) => _valorar(v, 'táctil'),
@@ -1003,10 +938,7 @@ class _PantallaValoracionState extends State<PantallaValoracion> {
                 ),
               if (existe) ...[
                 const SizedBox(height: 16),
-                const Text(
-                  'Realidad aumentada (maqueta): activa la cámara y arrastra '
-                  'la ficha sobre tu libro físico.',
-                ),
+                Text(t.maquetaAR),
                 VistaManos(
                   onGesto: (v) => _valorar(v, 'cámara'),
                   superposicion: FichaFlotante(
@@ -1026,10 +958,10 @@ class _PantallaValoracionState extends State<PantallaValoracion> {
                 ),
               const Divider(height: 32),
               Text(
-                'Últimas valoraciones (SQLite)',
+                t.ultimasValoraciones,
                 style: Theme.of(context).textTheme.titleMedium,
               ),
-              if (historial.isEmpty) const Text('Todavía no hay valoraciones'),
+              if (historial.isEmpty) Text(t.todaviaNoValoraciones),
               for (final r in historial)
                 ListTile(dense: true, title: Text('${r['detalle']}')),
             ],
@@ -1048,8 +980,9 @@ class PantallaAjustes extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: AppBar(title: const Text('Ajustes y permisos')),
+      appBar: AppBar(title: Text(t.navAjustes)),
       body: ListenableBuilder(
         listenable: Listenable.merge([ctrl, nui]),
         builder: (context, _) => ListView(
@@ -1058,17 +991,17 @@ class PantallaAjustes extends StatelessWidget {
             ValueListenableBuilder<ThemeMode>(
               valueListenable: modoTema,
               builder: (context, modo, _) => SwitchListTile(
-                title: const Text('Modo oscuro'),
+                title: Text(t.modoOscuro),
                 value: modo == ThemeMode.dark,
                 onChanged: (v) =>
                     modoTema.value = v ? ThemeMode.dark : ThemeMode.light,
               ),
             ),
-                       ValueListenableBuilder<Locale>(
+            ValueListenableBuilder<Locale>(
               valueListenable: idioma,
               builder: (context, loc, _) => ListTile(
                 leading: const Icon(Icons.language),
-                title: Text(AppLocalizations.of(context)!.idioma),
+                title: Text(t.idioma),
                 trailing: SegmentedButton<String>(
                   segments: const [
                     ButtonSegment(value: 'es', label: Text('ES')),
@@ -1080,46 +1013,40 @@ class PantallaAjustes extends StatelessWidget {
               ),
             ),
             SwitchListTile(
-              title: const Text('Respuestas habladas'),
+              title: Text(t.respuestasHabladas),
               value: nui.hablar,
               onChanged: nui.cambiarHablar,
             ),
             ListTile(
               leading: const Icon(Icons.mic),
-              title: const Text('Permiso de micrófono'),
-              subtitle: Text(nui.estadoMic),
+              title: Text(t.permisoMicrofono),
+              subtitle: Text(textoMic(t, nui.estadoMic)),
               trailing: TextButton(
                 onPressed: nui.iniciarVoz,
-                child: const Text('Comprobar'),
+                child: Text(t.comprobar),
               ),
             ),
-            ValueListenableBuilder<String>(
+            ValueListenableBuilder<EstadoCamara>(
               valueListenable: estadoCamara,
               builder: (context, estado, _) => ListTile(
                 leading: const Icon(Icons.videocam),
-                title: const Text('Permiso de cámara'),
-                subtitle: Text(estado),
-                trailing: const Text('Se pide al valorar'),
+                title: Text(t.permisoCamara),
+                subtitle: Text(textoCamara(t, estado)),
+                trailing: Text(t.sePideAlValorar),
               ),
             ),
             const Divider(height: 32),
             Text(
-              'Aviso de privacidad',
+              t.avisoPrivacidadTitulo,
               style: Theme.of(context).textTheme.titleMedium,
             ),
-            const Text(
-              'BiblioVoz usa el micrófono solo cuando pulsas «Hablar» y la cámara '
-              'solo cuando pulsas «Valorar con la cámara». El audio y la imagen los '
-              'procesa el navegador: no se envían ni se almacenan. En la base de '
-              'datos solo se guarda el texto de las órdenes, las sacudidas y las '
-              'valoraciones.',
-            ),
+            Text(t.avisoPrivacidadAjustes),
             const Divider(height: 32),
             Text(
-              'Registro de la interfaz natural (SQLite)',
+              t.registroNui,
               style: Theme.of(context).textTheme.titleMedium,
             ),
-            if (ctrl.registrosNui.isEmpty) const Text('Sin registros'),
+            if (ctrl.registrosNui.isEmpty) Text(t.sinRegistros),
             for (final r in ctrl.registrosNui.take(10))
               ListTile(
                 dense: true,
@@ -1178,6 +1105,7 @@ class _FichaFlotanteState extends State<FichaFlotante> {
 
   @override
   Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context)!;
     return Stack(
       children: [
         Positioned(
@@ -1190,7 +1118,7 @@ class _FichaFlotanteState extends State<FichaFlotante> {
               'Ficha de "${widget.libro.titulo}" colocada sobre el libro',
             ),
             child: Card(
-              color: Paleta.carbon.withValues(alpha: 0.85),
+              color: const Color(0xB3000000),
               child: Padding(
                 padding: const EdgeInsets.all(10),
                 child: ConstrainedBox(
@@ -1220,11 +1148,11 @@ class _FichaFlotanteState extends State<FichaFlotante> {
                         mainAxisSize: MainAxisSize.min,
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(Icons.star, color: Paleta.lavanda, size: 18),
+                          const Icon(Icons.star, color: Colors.amber, size: 18),
                           const SizedBox(width: 4),
                           Text(
                             _nota == null
-                                ? 'Sin valoraciones'
+                                ? t.sinValoraciones
                                 : '${_nota!.toStringAsFixed(1)} / 5 · $_votos',
                             style: const TextStyle(color: Colors.white),
                           ),

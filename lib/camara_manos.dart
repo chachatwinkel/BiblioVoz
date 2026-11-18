@@ -2,7 +2,7 @@ import 'dart:js_interop';
 import 'dart:ui_web' as ui_web;
 
 import 'package:flutter/material.dart';
-
+import 'l10n/app_localizations.dart';
 // Puente con web/manos.js (MediaPipe: detección de manos con la cámara).
 
 @JS('biblioManos.crearVista')
@@ -18,7 +18,10 @@ const String _tipoVista = 'bibliovoz-manos';
 bool _vistaRegistrada = false;
 
 /// Estado del permiso de cámara, visible en la pantalla de Ajustes.
-final ValueNotifier<String> estadoCamara = ValueNotifier('Sin comprobar');
+enum EstadoCamara { sinComprobar, activa, apagada, noDisponible }
+
+final ValueNotifier<EstadoCamara> estadoCamara =
+    ValueNotifier(EstadoCamara.sinComprobar);
 
 /// Cámara con detección de pulgar arriba / abajo.
 ///
@@ -60,8 +63,8 @@ class _VistaManosState extends State<VistaManos> {
       widget.onGesto(gesto.toDart == 'up' ? 1 : -1);
     }).toJS).toDart)
         .toDart;
-    estadoCamara.value =
-        ok ? 'Cámara activa' : 'No disponible o permiso denegado';
+       estadoCamara.value =
+        ok ? EstadoCamara.activa : EstadoCamara.noDisponible;
     if (!mounted) {
       _detener();
       return;
@@ -74,7 +77,7 @@ class _VistaManosState extends State<VistaManos> {
 
   void _desactivar() {
     _detener();
-    estadoCamara.value = 'Cámara apagada';
+       estadoCamara.value = EstadoCamara.apagada;
     setState(() => _activa = false);
   }
 
@@ -87,6 +90,7 @@ class _VistaManosState extends State<VistaManos> {
 
   @override
   Widget build(BuildContext context) {
+   final t = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -119,7 +123,7 @@ class _VistaManosState extends State<VistaManos> {
               ? OutlinedButton.icon(
                   onPressed: _desactivar,
                   icon: const Icon(Icons.videocam_off),
-                  label: const Text('Desactivar cámara'),
+                  label: Text(t.desactivarCamara),
                 )
               : FilledButton.icon(
                   onPressed: _cargando ? null : _activar,
@@ -131,16 +135,15 @@ class _VistaManosState extends State<VistaManos> {
                         )
                       : const Icon(Icons.videocam),
                   label: Text(_cargando
-                      ? 'Cargando detector…'
-                      : 'Valorar con la cámara (pulgar)'),
+                      ? t.cargandoDetector
+                      : t.valorarConCamara),
                 ),
         ),
         const SizedBox(height: 4),
-        const Text(
-          'La cámara solo se enciende al pulsar el botón. La imagen se procesa '
-          'en tu navegador y no se envía ni se guarda.',
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 12),
+         Text(
+           t.avisoCamara,
+           textAlign: TextAlign.center,
+           style: const TextStyle(fontSize: 12),
         ),
       ],
     );

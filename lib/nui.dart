@@ -12,6 +12,9 @@ import 'db.dart';
 /// Interfaz natural: voz, respuesta hablada y movimiento (sacudida).
 final Nui nui = Nui();
 
+/// Estado del permiso de micrófono (la pantalla de Ajustes lo traduce).
+enum EstadoMic { sinComprobar, disponible, noDisponible }
+
 class Nui extends ChangeNotifier {
   final SpeechToText _voz = SpeechToText();
   final FlutterTts _tts = FlutterTts();
@@ -21,10 +24,13 @@ class Nui extends ChangeNotifier {
   bool vozDisponible = false;
   bool escuchando = false;
   bool hablar = true;
-  String estadoMic = 'Sin comprobar';
+  EstadoMic estadoMic = EstadoMic.sinComprobar;
   String ultimoTexto = '';
   String respuesta = '';
   Libro? sugerencia;
+
+  /// true si la app está en inglés (afecta a la voz y al reconocimiento).
+  bool get _ingles => idioma.value.languageCode == 'en';
 
   // ---------------- Voz ----------------
 
@@ -40,23 +46,22 @@ class Nui extends ChangeNotifier {
         },
         onError: (e) {
           escuchando = false;
-          respuesta = 'Error de voz: ${e.errorMsg}';
+          respuesta = textos.errorVoz(e.errorMsg);
           notifyListeners();
         },
       );
     } catch (_) {
       vozDisponible = false;
     }
-    estadoMic = vozDisponible
-        ? 'Micrófono disponible'
-        : 'No disponible o permiso denegado';
+    estadoMic =
+        vozDisponible ? EstadoMic.disponible : EstadoMic.noDisponible;
     notifyListeners();
     return vozDisponible;
   }
 
   Future<void> escuchar() async {
     if (!vozDisponible && !await iniciarVoz()) {
-      respuesta = 'No puedo usar el micrófono. Escribe la orden en el cuadro.';
+      respuesta = textos.noPuedoMicrofono;
       notifyListeners();
       return;
     }
@@ -65,7 +70,7 @@ class Nui extends ChangeNotifier {
     notifyListeners();
     await _voz.listen(
       listenOptions: SpeechListenOptions(
-        localeId: 'es_ES',
+        localeId: _ingles ? 'en_US' : 'es_ES',
         pauseFor: const Duration(seconds: 3),
       ),
       onResult: (r) {
@@ -86,28 +91,33 @@ class Nui extends ChangeNotifier {
   }
 
   /// Interpreta una orden (hablada o escrita) y la guarda en SQLite.
-  ///  - «Busca libros de ciencia ficción»          -> lee de SQLite
-  ///  - «Devuelve el préstamo del libro Dune»       -> escribe en SQLite
+  /// Se entienden las órdenes en español y en inglés:
+  ///  - «Busca libros de ciencia ficción» / "Search books about science fiction"
+  ///    -> lee de SQLite
+  ///  - «Devuelve el préstamo del libro Dune» / "Return the loan of the book Dune"
+  ///    -> escribe en SQLite
   Future<void> ejecutar(String texto) async {
-    final t = texto.toLowerCase().replaceAll(RegExp(r'[.,;!?¿¡]'), '').trim();
-    final busca =
-        RegExp(r'busca(?:r)?\s+libros\s+(?:de|sobre)\s+(.+)').firstMatch(t);
+    final orden =
+        texto.toLowerCase().replaceAll(RegExp(r'[.,;!?¿¡]'), '').trim();
+    final busca = RegExp(
+      r'(?:busca(?:r)?\s+libros\s+(?:de|sobre)|search(?:\s+for)?\s+books\s+(?:about|on|of))\s+(.+)',
+    ).firstMatch(orden);
     final devuelve = RegExp(
-            r'devuelve\s+(?:el\s+)?pr[eé]stamo\s+del\s+libro\s+(.+)')
-        .firstMatch(t);
+      r'(?:devuelve(?:\s+el)?\s+pr[eé]stamo\s+del\s+libro|return\s+the\s+loan\s+of(?:\s+the\s+book)?)\s+(.+)',
+    ).firstMatch(orden);
 
     String r;
     if (busca != null) {
       final tema = busca.group(1)!.trim();
       await ctrl.buscar(tema);
-      r = 'He encontrado ${ctrl.libros.length} libros de $tema';
+      r = textos.encontradosLibros(ctrl.libros.length, tema);
     } else if (devuelve != null) {
       final titulo = await ctrl.devolverPorTitulo(devuelve.group(1)!.trim());
       r = titulo != null
-          ? 'Préstamo de $titulo devuelto'
-          : 'No encuentro ese préstamo activo';
+          ? textos.prestamoDevuelto(titulo)
+          : textos.noEncuentroPrestamo;
     } else {
-      r = 'No he entendido la orden';
+      r = textos.noEntendido;
     }
     respuesta = r;
     ultimoTexto = texto;
@@ -119,7 +129,7 @@ class Nui extends ChangeNotifier {
   Future<void> _decir(String texto) async {
     if (!hablar) return;
     try {
-      await _tts.setLanguage('es-ES');
+      await _tts.setLanguage(_ingles ? 'en-US' : 'es-ES');
       await _tts.speak(texto);
     } catch (_) {}
   }
@@ -151,8 +161,9 @@ class Nui extends ChangeNotifier {
   Future<void> sacudir() async {
     final libro = ctrl.libroAlAzar();
     sugerencia = libro;
-    respuesta =
-        libro == null ? 'No hay libros disponibles' : 'Te propongo: ${libro.titulo}';
+    respuesta = libro == null
+        ? textos.sinLibrosDisponibles
+        : textos.tePropongo(libro.titulo);
     notifyListeners();
     await ctrl.registrarNui('movimiento', respuesta);
     await _decir(respuesta);
